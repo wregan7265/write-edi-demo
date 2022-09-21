@@ -1,0 +1,986 @@
+{
+  "definition": {
+    "$schema": "https://stedi.com/schemas/x12/1.0.0/schema",
+    "x-stedi-standard": "x12",
+    "x12-transaction-set": "855",
+    "x12-release": "005010",
+    "properties": {
+      "heading": {
+        "x12-type": "area",
+        "x12-area-id": "heading",
+        "x12-pos": "01",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "transaction_set_header_ST": {
+            "x12-type": "segment",
+            "x12-segment-id": "ST",
+            "x12-pos": "0100",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "transaction_set_identifier_code_01": {
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-pos": "01",
+                "type": "string",
+                "default": "855",
+                "enum": [
+                  "855"
+                ],
+                "x12-codes": {
+                  "855": {
+                    "code": "855"
+                  }
+                }
+              },
+              "transaction_set_control_number_02": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "02",
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 9
+              }
+            },
+            "required": [
+              "transaction_set_identifier_code_01",
+              "transaction_set_control_number_02"
+            ]
+          },
+          "beginning_segment_for_purchase_order_acknowledgment_BAK": {
+            "x12-type": "segment",
+            "x12-segment-id": "BAK",
+            "x12-pos": "0200",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "transaction_set_purpose_code_01": {
+                "x12-pos": "01",
+                "type": "string",
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-codes": {
+                  "00": {
+                    "description": "Original",
+                    "code": "00"
+                  }
+                },
+                "enum": [
+                  "00"
+                ]
+              },
+              "acknowledgment_type_02": {
+                "x12-pos": "02",
+                "type": "string",
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-codes": {
+                  "AC": {
+                    "description": "Acknowledge - With Detail and Change",
+                    "code": "AC"
+                  },
+                  "AD": {
+                    "description": "Acknowledge - With Detail, No Change",
+                    "code": "AD"
+                  },
+                  "AE": {
+                    "description": "Acknowledge - With Exception Detail Only",
+                    "code": "AE"
+                  },
+                  "AH": {
+                    "description": "Acknowledge - Hold Status",
+                    "code": "AH"
+                  },
+                  "AK": {
+                    "description": "Acknowledge - No Detail or Change",
+                    "code": "AK"
+                  },
+                  "AP": {
+                    "description": "Acknowledge - Product Replenishment",
+                    "code": "AP"
+                  },
+                  "ZZ": {
+                    "description": "Mutually Defined",
+                    "code": "ZZ"
+                  }
+                },
+                "enum": [
+                  "AC",
+                  "AD",
+                  "AE",
+                  "AH",
+                  "AK",
+                  "AP",
+                  "ZZ"
+                ]
+              },
+              "purchase_order_number_03": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "03",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 22
+              },
+              "date_04": {
+                "x12-element-type": "DT",
+                "x12-type": "element-date",
+                "x12-pos": "04",
+                "type": "string",
+                "format": "date",
+                "x12-format": "CCYYMMDD"
+              },
+              "date_09": {
+                "x12-element-type": "DT",
+                "x12-type": "element-date",
+                "x12-pos": "09",
+                "type": "string",
+                "format": "date",
+                "x12-format": "CCYYMMDD"
+              }
+            },
+            "required": [
+              "transaction_set_purpose_code_01",
+              "acknowledgment_type_02",
+              "purchase_order_number_03",
+              "date_04",
+              "date_09"
+            ],
+            "description": "To indicate the beginning of the Purchase Order Acknowledgment Transaction Set and transmit identifying numbers and dates\n\nBAK04 is the date assigned by the purchaser to the purchase order 2 BAK09 is the date assigned by the sender to the acknowledgment"
+          },
+          "reference_information_REF": {
+            "x12-type": "segment-repeat",
+            "type": "array",
+            "items": {
+              "x12-type": "segment",
+              "x12-segment-id": "REF",
+              "x12-pos": "0500",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reference_identification_qualifier_01": {
+                  "x12-pos": "01",
+                  "type": "string",
+                  "x12-element-type": "ID",
+                  "x12-type": "element-enum",
+                  "x12-codes": {
+                    "CO": {
+                      "description": "Customer Order Number",
+                      "code": "CO"
+                    }
+                  },
+                  "enum": [
+                    "CO"
+                  ]
+                },
+                "reference_identification_02": {
+                  "x12-element-type": "AN",
+                  "x12-type": "element-string",
+                  "x12-pos": "02",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50
+                }
+              },
+              "required": [
+                "reference_identification_qualifier_01",
+                "reference_identification_02"
+              ]
+            },
+            "minItems": 1
+          },
+          "party_identification_N1_loop_selling_party": {
+            "x12-type": "loop-array",
+            "type": "array",
+            "items": {
+              "x12-type": "loop-object",
+              "x12-pos": "3000",
+              "x12-loop-id": "N1",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "party_identification_N1": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "N1",
+                  "x12-pos": "3000",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_identifier_code_01": {
+                      "x12-pos": "01",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "SE": {
+                          "description": "Selling Party",
+                          "code": "SE"
+                        }
+                      },
+                      "enum": [
+                        "SE"
+                      ]
+                    },
+                    "name_02": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "02",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 60
+                    },
+                    "identification_code_qualifier_03": {
+                      "x12-pos": "03",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "92": {
+                          "description": "Assigned by Buyer or Buyer's Agent",
+                          "code": "92"
+                        }
+                      },
+                      "enum": [
+                        "92"
+                      ]
+                    },
+                    "identification_code_04": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "04",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 80,
+                      "examples": [
+                        "DROPSHIP CUSTOMER"
+                      ],
+                      "description": "Code identifying a party or other code\n\n- This segment, used alone, provides the most efficient method of providing organizational identification. To obtain this efficiency the \"ID Code\" (N104) must provide a key to the table maintained by the transaction processing party.\n\nFor Acme this is DROPSHIP CUSTOMER"
+                    }
+                  },
+                  "required": [
+                    "entity_identifier_code_01"
+                  ],
+                  "allOf": [
+                    {
+                      "x12-condition": "R0203",
+                      "anyOf": [
+                        {
+                          "required": [
+                            "name_02"
+                          ],
+                          "type": "object",
+                          "properties": {
+                            "name_02": true
+                          }
+                        },
+                        {
+                          "required": [
+                            "identification_code_qualifier_03"
+                          ],
+                          "type": "object",
+                          "properties": {
+                            "identification_code_qualifier_03": true
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "x12-condition": "P0304",
+                      "type": "object",
+                      "dependentRequired": {
+                        "identification_code_qualifier_03": [
+                          "identification_code_04"
+                        ],
+                        "identification_code_04": [
+                          "identification_code_qualifier_03"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "party_location_N3": {
+                  "x12-type": "segment-repeat",
+                  "type": "array",
+                  "items": {
+                    "x12-type": "segment",
+                    "x12-segment-id": "N3",
+                    "x12-pos": "3200",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "address_information_01": {
+                        "x12-element-type": "AN",
+                        "x12-type": "element-string",
+                        "x12-pos": "01",
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 55
+                      }
+                    },
+                    "required": [
+                      "address_information_01"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 2
+                },
+                "geographic_location_N4": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "N4",
+                  "x12-pos": "3300",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "city_name_01": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "01",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 30
+                    },
+                    "state_or_province_code_02": {
+                      "x12-element-type": "ID",
+                      "x12-type": "element-string",
+                      "x12-pos": "02",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 2
+                    },
+                    "postal_code_03": {
+                      "x12-element-type": "ID",
+                      "x12-type": "element-string",
+                      "x12-pos": "03",
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 15
+                    },
+                    "country_code_04": {
+                      "x12-element-type": "ID",
+                      "x12-type": "element-string",
+                      "x12-pos": "04",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 3
+                    }
+                  },
+                  "description": "To specify the geographic place of the named party\n\n- A combination of N401 through N403 may be adequate to specify location\n- N402 is required only if the city name (N401) is in the U.S. or Canada"
+                }
+              },
+              "required": [
+                "party_identification_N1"
+              ],
+              "title": "N1 Loop - Selling Party"
+            }
+          },
+          "party_identification_N1_loop_ship_to": {
+            "x12-type": "loop-array",
+            "type": "array",
+            "items": {
+              "x12-type": "loop-object",
+              "x12-pos": "3000",
+              "x12-loop-id": "N1",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "party_identification_N1": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "N1",
+                  "x12-pos": "3000",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_identifier_code_01": {
+                      "x12-pos": "01",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "ST": {
+                          "description": "Ship To",
+                          "code": "ST"
+                        }
+                      },
+                      "enum": [
+                        "ST"
+                      ]
+                    },
+                    "name_02": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "02",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 60
+                    },
+                    "identification_code_qualifier_03": {
+                      "x12-element-type": "ID",
+                      "x12-type": "element-string",
+                      "x12-pos": "03",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2
+                    },
+                    "identification_code_04": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "04",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 80,
+                      "description": "Code identifying a party or other code\n\n- This segment, used alone, provides the most efficient method of providing organizational identification. To obtain this efficiency the \"ID Code\" (N104) must provide a key to the table maintained by the transaction processing party.\n-For Acme this is DROPSHIP CUSTOMER",
+                      "examples": [
+                        "DROPSHIP CUSTOMER"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "entity_identifier_code_01"
+                  ],
+                  "allOf": [
+                    {
+                      "x12-condition": "P0304",
+                      "type": "object",
+                      "dependentRequired": {
+                        "identification_code_qualifier_03": [
+                          "identification_code_04"
+                        ],
+                        "identification_code_04": [
+                          "identification_code_qualifier_03"
+                        ]
+                      }
+                    },
+                    {
+                      "x12-condition": "R0203",
+                      "anyOf": [
+                        {
+                          "required": [
+                            "name_02"
+                          ],
+                          "type": "object",
+                          "properties": {
+                            "name_02": true
+                          }
+                        },
+                        {
+                          "required": [
+                            "identification_code_qualifier_03"
+                          ],
+                          "type": "object",
+                          "properties": {
+                            "identification_code_qualifier_03": true
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "party_location_N3": {
+                  "x12-type": "segment-repeat",
+                  "type": "array",
+                  "items": {
+                    "x12-type": "segment",
+                    "x12-segment-id": "N3",
+                    "x12-pos": "3200",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "address_information_01": {
+                        "x12-element-type": "AN",
+                        "x12-type": "element-string",
+                        "x12-pos": "01",
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 55
+                      }
+                    },
+                    "required": [
+                      "address_information_01"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 2
+                },
+                "geographic_location_N4": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "N4",
+                  "x12-pos": "3300",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "city_name_01": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "01",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 30
+                    },
+                    "state_or_province_code_02": {
+                      "x12-element-type": "ID",
+                      "x12-type": "element-string",
+                      "x12-pos": "02",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 2
+                    },
+                    "postal_code_03": {
+                      "x12-element-type": "ID",
+                      "x12-type": "element-string",
+                      "x12-pos": "03",
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 15
+                    },
+                    "country_code_04": {
+                      "x12-element-type": "ID",
+                      "x12-type": "element-string",
+                      "x12-pos": "04",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 3
+                    }
+                  }
+                }
+              },
+              "required": [
+                "party_identification_N1"
+              ],
+              "title": "N1 Loop - Ship To"
+            }
+          }
+        },
+        "required": [
+          "beginning_segment_for_purchase_order_acknowledgment_BAK",
+          "party_identification_N1_loop_selling_party",
+          "party_identification_N1_loop_ship_to"
+        ]
+      },
+      "detail": {
+        "x12-type": "area",
+        "x12-area-id": "detail",
+        "x12-pos": "02",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "baseline_item_data_PO1_loop": {
+            "x12-type": "loop-array",
+            "maxItems": 100000,
+            "type": "array",
+            "items": {
+              "x12-type": "loop-object",
+              "x12-pos": "0100",
+              "x12-loop-id": "PO1",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "baseline_item_data_PO1": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "PO1",
+                  "x12-pos": "0100",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "assigned_identification_01": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "01",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 20
+                    },
+                    "quantity_02": {
+                      "x12-element-type": "R",
+                      "x12-type": "element-numeric",
+                      "x12-pos": "02",
+                      "type": "number",
+                      "minimum": -999999999999999,
+                      "maximum": 999999999999999
+                    },
+                    "unit_or_basis_for_measurement_code_03": {
+                      "x12-pos": "03",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "EA": {
+                          "description": "Each",
+                          "code": "EA"
+                        }
+                      },
+                      "enum": [
+                        "EA"
+                      ]
+                    },
+                    "unit_price_04": {
+                      "x12-element-type": "R",
+                      "x12-type": "element-numeric",
+                      "x12-pos": "04",
+                      "type": "number",
+                      "minimum": -999999999999999,
+                      "maximum": 999999999999999
+                    },
+                    "product_service_id_qualifier_06": {
+                      "x12-pos": "06",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "VC": {
+                          "description": "Vendor's (Seller's) Catalog Number",
+                          "code": "VC"
+                        }
+                      },
+                      "enum": [
+                        "VC"
+                      ]
+                    },
+                    "product_service_id_07": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "07",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 48
+                    },
+                    "product_service_id_qualifier_08": {
+                      "x12-pos": "08",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "SK": {
+                          "description": "Stock Keeping Unit (SKU)",
+                          "code": "SK"
+                        }
+                      },
+                      "enum": [
+                        "SK"
+                      ]
+                    },
+                    "product_service_id_09": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "09",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 48
+                    },
+                    "product_service_id_qualifier_10": {
+                      "x12-element-type": "ID",
+                      "x12-type": "element-string",
+                      "x12-pos": "10",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 2
+                    },
+                    "product_service_id_11": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "11",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 48
+                    }
+                  },
+                  "required": [
+                    "quantity_02"
+                  ],
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "x12-condition": "C0302",
+                      "dependentRequired": {
+                        "unit_or_basis_for_measurement_code_03": [
+                          "quantity_02"
+                        ]
+                      }
+                    },
+                    {
+                      "x12-condition": "P0607",
+                      "type": "object",
+                      "dependentRequired": {
+                        "product_service_id_qualifier_06": [
+                          "product_service_id_07"
+                        ],
+                        "product_service_id_07": [
+                          "product_service_id_qualifier_06"
+                        ]
+                      }
+                    },
+                    {
+                      "x12-condition": "P0809",
+                      "type": "object",
+                      "dependentRequired": {
+                        "product_service_id_qualifier_08": [
+                          "product_service_id_09"
+                        ],
+                        "product_service_id_09": [
+                          "product_service_id_qualifier_08"
+                        ]
+                      }
+                    },
+                    {
+                      "x12-condition": "P1011",
+                      "type": "object",
+                      "dependentRequired": {
+                        "product_service_id_qualifier_10": [
+                          "product_service_id_11"
+                        ],
+                        "product_service_id_11": [
+                          "product_service_id_qualifier_10"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "product_item_description_PID_loop": {
+                  "x12-type": "loop-array",
+                  "type": "array",
+                  "items": {
+                    "x12-type": "loop-object",
+                    "x12-pos": "0500",
+                    "x12-loop-id": "PID",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "product_item_description_PID": {
+                        "x12-type": "segment",
+                        "x12-segment-id": "PID",
+                        "x12-pos": "0500",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "item_description_type_01": {
+                            "x12-pos": "01",
+                            "type": "string",
+                            "x12-element-type": "ID",
+                            "x12-type": "element-enum",
+                            "x12-codes": {
+                              "F": {
+                                "description": "Free-form",
+                                "code": "F"
+                              }
+                            },
+                            "enum": [
+                              "F"
+                            ]
+                          },
+                          "description_05": {
+                            "x12-element-type": "AN",
+                            "x12-type": "element-string",
+                            "x12-pos": "05",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80,
+                            "examples": [
+                              "58313 – PRODUCT NAME"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "item_description_type_01",
+                          "description_05"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "product_item_description_PID"
+                    ]
+                  }
+                },
+                "line_item_acknowledgment_ACK_loop": {
+                  "x12-type": "loop-array",
+                  "type": "array",
+                  "items": {
+                    "x12-type": "loop-object",
+                    "x12-pos": "2700",
+                    "x12-loop-id": "ACK",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "line_item_acknowledgment_ACK": {
+                        "x12-type": "segment",
+                        "x12-segment-id": "ACK",
+                        "x12-pos": "2700",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "line_item_status_code_01": {
+                            "x12-pos": "01",
+                            "type": "string",
+                            "x12-element-type": "ID",
+                            "x12-type": "element-enum",
+                            "x12-codes": {
+                              "IA": {
+                                "description": "Item Accepted",
+                                "code": "IA"
+                              },
+                              "IB": {
+                                "description": "Item Backordered",
+                                "code": "IB"
+                              },
+                              "IR": {
+                                "description": "Item Rejected",
+                                "code": "IR"
+                              }
+                            },
+                            "enum": [
+                              "IA",
+                              "IB",
+                              "IR"
+                            ]
+                          },
+                          "quantity_02": {
+                            "x12-element-type": "R",
+                            "x12-type": "element-numeric",
+                            "x12-pos": "02",
+                            "type": "number",
+                            "minimum": -999999999999999,
+                            "maximum": 999999999999999
+                          },
+                          "unit_or_basis_for_measurement_code_03": {
+                            "x12-pos": "03",
+                            "type": "string",
+                            "x12-element-type": "ID",
+                            "x12-type": "element-enum",
+                            "x12-codes": {
+                              "EA": {
+                                "description": "Each",
+                                "code": "EA"
+                              }
+                            },
+                            "enum": [
+                              "EA"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "line_item_status_code_01"
+                        ],
+                        "allOf": [
+                          {
+                            "x12-condition": "P0203",
+                            "type": "object",
+                            "dependentRequired": {
+                              "quantity_02": [
+                                "unit_or_basis_for_measurement_code_03"
+                              ],
+                              "unit_or_basis_for_measurement_code_03": [
+                                "quantity_02"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "line_item_acknowledgment_ACK"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "baseline_item_data_PO1",
+                "product_item_description_PID_loop",
+                "line_item_acknowledgment_ACK_loop"
+              ]
+            }
+          }
+        },
+        "required": [
+          "baseline_item_data_PO1_loop"
+        ]
+      },
+      "summary": {
+        "x12-type": "area",
+        "x12-area-id": "summary",
+        "x12-pos": "03",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "transaction_totals_CTT_loop": {
+            "x12-type": "loop-array",
+            "type": "array",
+            "items": {
+              "x12-type": "loop-object",
+              "x12-pos": "0100",
+              "x12-loop-id": "CTT",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "transaction_totals_CTT": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "CTT",
+                  "x12-pos": "0100",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "number_of_line_items_01": {
+                      "x12-element-type": "N0",
+                      "x12-type": "element-integer",
+                      "x12-pos": "01",
+                      "type": "integer",
+                      "minimum": -999999,
+                      "maximum": 999999,
+                      "examples": []
+                    }
+                  },
+                  "required": [
+                    "number_of_line_items_01"
+                  ]
+                }
+              },
+              "required": [
+                "transaction_totals_CTT"
+              ]
+            }
+          },
+          "transaction_set_trailer_SE": {
+            "x12-type": "segment",
+            "x12-segment-id": "SE",
+            "x12-pos": "0300",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "number_of_included_segments_01": {
+                "x12-element-type": "N0",
+                "x12-type": "element-integer",
+                "x12-pos": "01",
+                "type": "integer",
+                "minimum": -9999999999,
+                "maximum": 9999999999
+              },
+              "transaction_set_control_number_02": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "02",
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 9
+              }
+            },
+            "required": [
+              "number_of_included_segments_01",
+              "transaction_set_control_number_02"
+            ]
+          }
+        },
+        "required": []
+      }
+    },
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "heading",
+      "detail"
+    ]
+  },
+  "name": "Acme's Purchase Order Acknowledgment",
+  "target": {
+    "release": "005010",
+    "standard": "x12",
+    "transactionSet": "855"
+  }
+}

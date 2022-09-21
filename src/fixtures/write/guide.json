@@ -1,0 +1,1004 @@
+{
+  "definition": {
+    "$schema": "https://stedi.com/schemas/x12/1.0.0/schema",
+    "x-stedi-standard": "x12",
+    "x12-transaction-set": "850",
+    "x12-release": "005010",
+    "x12-delimiters": {
+      "segment": "~",
+      "repetition": "U",
+      "element": "*",
+      "composite": ">"
+    },
+    "properties": {
+      "heading": {
+        "x12-type": "area",
+        "x12-area-id": "heading",
+        "x12-pos": "01",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "transaction_set_header_ST": {
+            "x12-type": "segment",
+            "x12-segment-id": "ST",
+            "x12-pos": "0100",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "transaction_set_identifier_code_01": {
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-pos": "01",
+                "type": "string",
+                "default": "850",
+                "enum": [
+                  "850"
+                ],
+                "x12-codes": {
+                  "850": {
+                    "code": "850"
+                  }
+                }
+              },
+              "transaction_set_control_number_02": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "02",
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 9
+              }
+            },
+            "required": [
+              "transaction_set_identifier_code_01",
+              "transaction_set_control_number_02"
+            ]
+          },
+          "beginning_segment_for_purchase_order_BEG": {
+            "x12-type": "segment",
+            "x12-segment-id": "BEG",
+            "x12-pos": "0200",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "transaction_set_purpose_code_01": {
+                "x12-pos": "01",
+                "type": "string",
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-codes": {
+                  "00": {
+                    "description": "Original",
+                    "code": "00"
+                  }
+                },
+                "enum": [
+                  "00"
+                ]
+              },
+              "purchase_order_type_code_02": {
+                "x12-pos": "02",
+                "type": "string",
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-codes": {
+                  "DS": {
+                    "description": "Dropship",
+                    "code": "DS"
+                  },
+                  "SS": {
+                    "description": "Supply or Service Order",
+                    "code": "SS"
+                  }
+                },
+                "enum": [
+                  "DS",
+                  "SS"
+                ]
+              },
+              "purchase_order_number_03": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "03",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 22
+              },
+              "date_05": {
+                "x12-element-type": "DT",
+                "x12-type": "element-date",
+                "x12-pos": "05",
+                "type": "string",
+                "format": "date",
+                "x12-format": "CCYYMMDD"
+              }
+            },
+            "required": [
+              "transaction_set_purpose_code_01",
+              "purchase_order_type_code_02",
+              "purchase_order_number_03",
+              "date_05"
+            ]
+          },
+          "reference_information_REF_division_code": {
+            "x12-type": "segment-repeat",
+            "type": "array",
+            "items": {
+              "x12-type": "segment",
+              "x12-segment-id": "REF",
+              "x12-pos": "0500",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reference_identification_qualifier_01": {
+                  "x12-pos": "01",
+                  "type": "string",
+                  "x12-element-type": "ID",
+                  "x12-type": "element-enum",
+                  "x12-codes": {
+                    "19": {
+                      "description": "Division Identifier",
+                      "code": "19"
+                    },
+                    "CC": {
+                      "description": "Contract Co-op Number",
+                      "code": "CC"
+                    }
+                  },
+                  "enum": [
+                    "19",
+                    "CC"
+                  ]
+                },
+                "reference_identification_02": {
+                  "x12-element-type": "AN",
+                  "x12-type": "element-string",
+                  "x12-pos": "02",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50
+                }
+              },
+              "required": [
+                "reference_identification_qualifier_01",
+                "reference_identification_02"
+              ],
+              "description": "To add any additional routing information for Trading Partner divisions. Please reach out to Acme if you need this populated.",
+              "title": "Reference Information - Division Code"
+            },
+            "minItems": 1
+          },
+          "reference_information_REF_customer_order": {
+            "x12-type": "segment-repeat",
+            "type": "array",
+            "items": {
+              "x12-type": "segment",
+              "x12-segment-id": "REF",
+              "x12-pos": "0500",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reference_identification_qualifier_01": {
+                  "x12-pos": "01",
+                  "type": "string",
+                  "x12-element-type": "ID",
+                  "x12-type": "element-enum",
+                  "x12-codes": {
+                    "CO": {
+                      "description": "Customer Order Number",
+                      "code": "CO"
+                    }
+                  },
+                  "enum": [
+                    "CO"
+                  ]
+                },
+                "reference_identification_02": {
+                  "x12-element-type": "AN",
+                  "x12-type": "element-string",
+                  "x12-pos": "02",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50,
+                  "description": "Reference information as defined for a particular Transaction Set or as specified by the Reference Identification Qualifier\n\n"
+                }
+              },
+              "required": [
+                "reference_identification_qualifier_01",
+                "reference_identification_02"
+              ],
+              "description": "Indicates Acme's internal sales order number, available upon request.",
+              "title": "Reference Information - Customer Order"
+            },
+            "minItems": 1
+          },
+          "reference_information_REF_memo_field": {
+            "x12-type": "segment-repeat",
+            "type": "array",
+            "items": {
+              "x12-type": "segment",
+              "x12-segment-id": "REF",
+              "x12-pos": "0500",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reference_identification_qualifier_01": {
+                  "x12-pos": "01",
+                  "type": "string",
+                  "x12-element-type": "ID",
+                  "x12-type": "element-enum",
+                  "x12-codes": {
+                    "ZZ": {
+                      "description": "Mutually Defined",
+                      "code": "ZZ"
+                    }
+                  },
+                  "enum": [
+                    "ZZ"
+                  ]
+                },
+                "reference_identification_02": {
+                  "x12-element-type": "AN",
+                  "x12-type": "element-string",
+                  "x12-pos": "02",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50,
+                  "examples": [
+                    "Memo field"
+                  ]
+                }
+              },
+              "required": [
+                "reference_identification_qualifier_01",
+                "reference_identification_02"
+              ],
+              "description": "Optional memo field, available upon request",
+              "title": "Reference Information - Memo Field"
+            },
+            "minItems": 1
+          },
+          "administrative_communications_contact_PER": {
+            "x12-type": "segment",
+            "x12-segment-id": "PER",
+            "x12-pos": "0600",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "contact_function_code_01": {
+                "x12-pos": "01",
+                "type": "string",
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-codes": {
+                  "OC": {
+                    "description": "Order Contact",
+                    "code": "OC"
+                  }
+                },
+                "enum": [
+                  "OC"
+                ]
+              },
+              "name_02": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "02",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "communication_number_qualifier_03": {
+                "x12-pos": "03",
+                "type": "string",
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-codes": {
+                  "TE": {
+                    "description": "Telephone",
+                    "code": "TE"
+                  }
+                },
+                "enum": [
+                  "TE"
+                ]
+              },
+              "communication_number_04": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "04",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "communication_number_qualifier_05": {
+                "x12-pos": "05",
+                "type": "string",
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-codes": {
+                  "EM": {
+                    "description": "Electronic Mail",
+                    "code": "EM"
+                  }
+                },
+                "enum": [
+                  "EM"
+                ]
+              },
+              "communication_number_06": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "06",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "contact_function_code_01",
+              "name_02",
+              "communication_number_qualifier_03",
+              "communication_number_04"
+            ],
+            "allOf": [
+              {
+                "x12-condition": "P0506",
+                "dependentRequired": {
+                  "communication_number_qualifier_05": [
+                    "communication_number_06"
+                  ],
+                  "communication_number_06": [
+                    "communication_number_qualifier_05"
+                  ]
+                }
+              }
+            ]
+          },
+          "carrier_details_routing_sequence_transit_time_TD5": {
+            "x12-type": "segment",
+            "x12-segment-id": "TD5",
+            "x12-pos": "2400",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "transportation_method_type_code_04": {
+                "x12-pos": "04",
+                "type": "string",
+                "x12-element-type": "ID",
+                "x12-type": "element-enum",
+                "x12-codes": {
+                  "ZZ": {
+                    "description": "Mutually defined",
+                    "code": "ZZ"
+                  }
+                },
+                "enum": [
+                  "ZZ"
+                ]
+              },
+              "routing_05": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "05",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 35,
+                "examples": [
+                  "FHD",
+                  "FR"
+                ],
+                "description": "Free-form description of the routing or requested routing for shipment, or the originating carrier's identity. \n\nFHD - FedEx Home Delivery\nFR - FedEx Freight"
+              }
+            },
+            "required": [
+              "transportation_method_type_code_04",
+              "routing_05"
+            ]
+          },
+          "party_identification_N1_loop": {
+            "x12-type": "loop-array",
+            "type": "array",
+            "items": {
+              "x12-type": "loop-object",
+              "x12-pos": "3100",
+              "x12-loop-id": "N1",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "party_identification_N1": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "N1",
+                  "x12-pos": "3100",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_identifier_code_01": {
+                      "x12-pos": "01",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "ST": {
+                          "description": "Ship To",
+                          "code": "ST"
+                        }
+                      },
+                      "enum": [
+                        "ST"
+                      ]
+                    },
+                    "name_02": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "02",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 60
+                    },
+                    "identification_code_qualifier_03": {
+                      "x12-pos": "03",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "92": {
+                          "description": "Assigned by Buyer or Buyer's Agent",
+                          "code": "92"
+                        }
+                      },
+                      "enum": [
+                        "92"
+                      ]
+                    },
+                    "identification_code_04": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "04",
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 80,
+                      "examples": [
+                        "DROPSHIP CUSTOMER"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "entity_identifier_code_01",
+                    "name_02"
+                  ],
+                  "allOf": [
+                    {
+                      "x12-condition": "P0304",
+                      "dependentRequired": {
+                        "identification_code_qualifier_03": [
+                          "identification_code_04"
+                        ],
+                        "identification_code_04": [
+                          "identification_code_qualifier_03"
+                        ]
+                      }
+                    }
+                  ],
+                  "description": "To identify a party by type of organization, name, and code. "
+                },
+                "party_location_N3": {
+                  "x12-type": "segment-repeat",
+                  "type": "array",
+                  "items": {
+                    "x12-type": "segment",
+                    "x12-segment-id": "N3",
+                    "x12-pos": "3300",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "address_information_01": {
+                        "x12-element-type": "AN",
+                        "x12-type": "element-string",
+                        "x12-pos": "01",
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 55
+                      },
+                      "address_information_02": {
+                        "x12-element-type": "AN",
+                        "x12-type": "element-string",
+                        "x12-pos": "02",
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 55
+                      }
+                    },
+                    "required": [
+                      "address_information_01"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 2
+                },
+                "geographic_location_N4": {
+                  "x12-type": "segment-repeat",
+                  "type": "array",
+                  "items": {
+                    "x12-type": "segment",
+                    "x12-segment-id": "N4",
+                    "x12-pos": "3400",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "city_name_01": {
+                        "x12-element-type": "AN",
+                        "x12-type": "element-string",
+                        "x12-pos": "01",
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 30
+                      },
+                      "state_or_province_code_02": {
+                        "x12-element-type": "ID",
+                        "x12-type": "element-string",
+                        "x12-pos": "02",
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                      },
+                      "postal_code_03": {
+                        "x12-element-type": "ID",
+                        "x12-type": "element-string",
+                        "x12-pos": "03",
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 15
+                      },
+                      "country_code_04": {
+                        "x12-element-type": "ID",
+                        "x12-type": "element-string",
+                        "x12-pos": "04",
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 3
+                      }
+                    },
+                    "description": "To specify the geographic place of the named party. \n\nA combination of N401 through N403 may be adequate to specify location\nN402 is required only if the city name (N401) is in the U.S. or Canada"
+                  },
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "party_identification_N1",
+                "party_location_N3",
+                "geographic_location_N4"
+              ]
+            },
+            "maxItems": 1,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "beginning_segment_for_purchase_order_BEG",
+          "carrier_details_routing_sequence_transit_time_TD5",
+          "party_identification_N1_loop"
+        ]
+      },
+      "detail": {
+        "x12-type": "area",
+        "x12-area-id": "detail",
+        "x12-pos": "02",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "baseline_item_data_PO1_loop": {
+            "x12-type": "loop-array",
+            "type": "array",
+            "items": {
+              "x12-type": "loop-object",
+              "x12-pos": "0100",
+              "x12-loop-id": "PO1",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "baseline_item_data_PO1": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "PO1",
+                  "x12-pos": "0100",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "assigned_identification_01": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "01",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 20
+                    },
+                    "quantity_02": {
+                      "x12-pos": "02",
+                      "minLength": 4,
+                      "maxLength": 100,
+                      "type": "string",
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string"
+                    },
+                    "unit_or_basis_for_measurement_code_03": {
+                      "x12-pos": "03",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "EA": {
+                          "description": "Each",
+                          "code": "EA"
+                        }
+                      },
+                      "enum": [
+                        "EA"
+                      ]
+                    },
+                    "unit_price_04": {
+                      "x12-element-type": "R",
+                      "x12-type": "element-numeric",
+                      "x12-pos": "04",
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 999999999999999
+                    },
+                    "product_service_id_qualifier_06": {
+                      "x12-pos": "06",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "VC": {
+                          "description": "Vendor's (Seller's) Catalog Number",
+                          "code": "VC"
+                        }
+                      },
+                      "enum": [
+                        "VC"
+                      ]
+                    },
+                    "product_service_id_07": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "07",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 48,
+                      "description": "Identifying number for a product or service. Vendor's code."
+                    },
+                    "product_service_id_qualifier_08": {
+                      "x12-pos": "08",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "SK": {
+                          "description": "Stock Keeping Unit (SKU)",
+                          "code": "SK"
+                        }
+                      },
+                      "enum": [
+                        "SK"
+                      ]
+                    },
+                    "product_service_id_09": {
+                      "x12-element-type": "AN",
+                      "x12-type": "element-string",
+                      "x12-pos": "09",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 48,
+                      "description": "Identifying number for a product or service. Acme's item SKU"
+                    }
+                  },
+                  "required": [
+                    "quantity_02",
+                    "unit_or_basis_for_measurement_code_03",
+                    "unit_price_04",
+                    "product_service_id_qualifier_06",
+                    "product_service_id_07",
+                    "product_service_id_qualifier_08",
+                    "product_service_id_09"
+                  ]
+                },
+                "product_item_description_PID_loop": {
+                  "x12-type": "loop-array",
+                  "type": "array",
+                  "items": {
+                    "x12-type": "loop-object",
+                    "x12-pos": "0500",
+                    "x12-loop-id": "PID",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "product_item_description_PID": {
+                        "x12-type": "segment",
+                        "x12-segment-id": "PID",
+                        "x12-pos": "0500",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "item_description_type_01": {
+                            "x12-pos": "01",
+                            "type": "string",
+                            "x12-element-type": "ID",
+                            "x12-type": "element-enum",
+                            "x12-codes": {
+                              "F": {
+                                "description": "Free-form",
+                                "code": "F"
+                              }
+                            },
+                            "enum": [
+                              "F"
+                            ]
+                          },
+                          "description_05": {
+                            "x12-element-type": "AN",
+                            "x12-type": "element-string",
+                            "x12-pos": "05",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80,
+                            "description": "A free-form description to clarify the related data elements and their content. This contains Acme's description of the product."
+                          }
+                        },
+                        "required": [
+                          "item_description_type_01"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "product_item_description_PID"
+                    ]
+                  }
+                },
+                "service_promotion_allowance_or_charge_information_SAC_loop": {
+                  "x12-type": "loop-array",
+                  "type": "array",
+                  "items": {
+                    "x12-type": "loop-object",
+                    "x12-pos": "1300",
+                    "x12-loop-id": "SAC",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "service_promotion_allowance_or_charge_information_SAC": {
+                        "x12-type": "segment-repeat",
+                        "type": "array",
+                        "items": {
+                          "x12-type": "segment",
+                          "x12-segment-id": "SAC",
+                          "x12-pos": "1300",
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "allowance_or_charge_indicator_01": {
+                              "x12-pos": "01",
+                              "type": "string",
+                              "x12-element-type": "ID",
+                              "x12-type": "element-enum",
+                              "x12-codes": {
+                                "A": {
+                                  "description": "Allowance",
+                                  "code": "A"
+                                },
+                                "C": {
+                                  "description": "Charge",
+                                  "code": "C"
+                                },
+                                "P": {
+                                  "description": "Promotion",
+                                  "code": "P"
+                                },
+                                "S": {
+                                  "description": "Service",
+                                  "code": "S"
+                                }
+                              },
+                              "enum": [
+                                "A",
+                                "C",
+                                "P",
+                                "S"
+                              ]
+                            },
+                            "service_promotion_allowance_or_charge_code_02": {
+                              "x12-pos": "02",
+                              "type": "string",
+                              "x12-element-type": "ID",
+                              "x12-type": "element-enum",
+                              "x12-codes": {
+                                "C310": {
+                                  "description": "Discount",
+                                  "code": "C310"
+                                },
+                                "E380": {
+                                  "description": "Lift Gate (Truck) or Forklift Service at Pickup/Delivery",
+                                  "code": "E380"
+                                }
+                              },
+                              "enum": [
+                                "C310",
+                                "E380"
+                              ]
+                            },
+                            "amount_05": {
+                              "x12-element-type": "N2",
+                              "x12-type": "element-numeric",
+                              "x12-pos": "05",
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 999999999999999
+                            },
+                            "description_15": {
+                              "x12-element-type": "AN",
+                              "x12-type": "element-string",
+                              "x12-pos": "15",
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 80,
+                              "examples": [
+                                "5% AD CO-OP DISCOUNT",
+                                "LIFT GATE ASSIST"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "allowance_or_charge_indicator_01",
+                            "service_promotion_allowance_or_charge_code_02",
+                            "amount_05",
+                            "description_15"
+                          ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 25
+                      }
+                    }
+                  }
+                }
+              },
+              "required": [
+                "baseline_item_data_PO1",
+                "product_item_description_PID_loop"
+              ]
+            }
+          }
+        },
+        "required": [
+          "baseline_item_data_PO1_loop"
+        ]
+      },
+      "summary": {
+        "x12-type": "area",
+        "x12-area-id": "summary",
+        "x12-pos": "03",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "transaction_totals_CTT_loop": {
+            "x12-type": "loop-array",
+            "type": "array",
+            "items": {
+              "x12-type": "loop-object",
+              "x12-pos": "0100",
+              "x12-loop-id": "CTT",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "transaction_totals_CTT": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "CTT",
+                  "x12-pos": "0100",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "number_of_line_items_01": {
+                      "x12-element-type": "N0",
+                      "x12-type": "element-integer",
+                      "x12-pos": "01",
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 999999
+                    }
+                  },
+                  "required": [
+                    "number_of_line_items_01"
+                  ]
+                },
+                "monetary_amount_information_AMT": {
+                  "x12-type": "segment",
+                  "x12-segment-id": "AMT",
+                  "x12-pos": "0200",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "amount_qualifier_code_01": {
+                      "x12-pos": "01",
+                      "type": "string",
+                      "x12-element-type": "ID",
+                      "x12-type": "element-enum",
+                      "x12-codes": {
+                        "TT": {
+                          "description": "Total Transaction Amount",
+                          "code": "TT"
+                        }
+                      },
+                      "enum": [
+                        "TT"
+                      ]
+                    },
+                    "monetary_amount_02": {
+                      "x12-element-type": "R",
+                      "x12-type": "element-numeric",
+                      "x12-pos": "02",
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 999999999999999
+                    }
+                  },
+                  "required": [
+                    "amount_qualifier_code_01",
+                    "monetary_amount_02"
+                  ]
+                }
+              },
+              "required": [
+                "transaction_totals_CTT",
+                "monetary_amount_information_AMT"
+              ]
+            }
+          },
+          "transaction_set_trailer_SE": {
+            "x12-type": "segment",
+            "x12-segment-id": "SE",
+            "x12-pos": "0300",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "number_of_included_segments_01": {
+                "x12-element-type": "N0",
+                "x12-type": "element-integer",
+                "x12-pos": "01",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9999999999
+              },
+              "transaction_set_control_number_02": {
+                "x12-element-type": "AN",
+                "x12-type": "element-string",
+                "x12-pos": "02",
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 9,
+                "description": "Identifying control number that must be unique within the transaction set functional group assigned by the originator for a transaction set.\n\nSince AMT is in Summary TT must be used stating Transaction Total"
+              }
+            },
+            "required": [
+              "number_of_included_segments_01",
+              "transaction_set_control_number_02"
+            ]
+          }
+        },
+        "required": [
+          "transaction_totals_CTT_loop"
+        ]
+      }
+    },
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "heading",
+      "detail",
+      "summary"
+    ]
+  },
+  "name": "Acme's Purchase Order",
+  "target": {
+    "release": "005010",
+    "standard": "x12",
+    "transactionSet": "850"
+  },
+  "visibility": "internal"
+}
