@@ -1,4 +1,21 @@
-import fs from "node:fs";
+import fs from "fs";
+import dotenv from "dotenv";
+import { requiredEnvVar } from "../lib/environment.js";
+
+const DEFAULT_RESOURCE_ID_BASE_PATH = "./src/resources";
+const DEFAULT_RESOURCE_ID_FILE_NAME = ".resource_ids";
+
+type ResourceFile = {
+  basePath: string;
+  fileName?: string;
+};
+
+type ResourceType = "mapping" | "guide";
+
+export type ResourceDetails = {
+  name: string;
+  id: string;
+};
 
 export const functionNameFromPath = (fnPath: string): string => {
   // get function name excluding extension
@@ -7,56 +24,57 @@ export const functionNameFromPath = (fnPath: string): string => {
   return fnPath.split("/").slice(-3, -1).join("-");
 };
 
-export const functionNamespaceFromPath = (fnPath: string): string => {
-  // get function name excluding extension
-  // path-a/path-b/path-never-ends/nice/function/handler.ts
-  // => nice-function
-  return fnPath.split("/").slice(-3, -1)[0];
-};
-
-export const fixtureNamespaceFromPath = (path: string): string => {
-  // path-a/path-b/path-never-ends/nice/fixtures/read/map.json
+export const resourceNamespaceFromPath = (path: string): string => {
+  // path-a/path-b/path-never-ends/nice/resources/X12-850/map.json
   // => read
   return path.split('/').slice(-2, -1)[0];
 }
 
 export const getFunctionPaths = (pathMatch?: string) => {
-  const basePath = "./src/functions";
-  const namespaces = fs.readdirSync(basePath);
+  const functionsRoot = "./src/functions";
+  const namespaces = fs.readdirSync(functionsRoot);
 
   const allFunctionPaths = namespaces.reduce(
     (paths: string[], namespace) => {
-    if (fs.lstatSync(`./src/functions/${namespace}`).isFile()) return paths;
+    if (fs.lstatSync(`${functionsRoot}/${namespace}`).isFile()) return paths;
 
-    return paths.concat(getAssetPaths(`${basePath}/${namespace}`, "handler.ts"));
+    return paths.concat(getAssetPaths({ basePath: `${functionsRoot}/${namespace}`, fileName: "handler.ts" }));
   }, []);
 
   return filterPaths(allFunctionPaths, pathMatch);
 };
 
-export const getGuidePaths = (pathMatch?: string) => {
-  const allGuidePaths = getAssetPaths("./src/fixtures", "guide.json");
-  return filterPaths(allGuidePaths, pathMatch);
+export const getEnabledTransactionSets = (): string[] => {
+  const enabledTransactionSetsList = requiredEnvVar("ENABLED_TRANSACTION_SETS");
+  return enabledTransactionSetsList.split(",");
 }
 
-export const getMapPaths = (pathMatch?: string) => {
-  const allMapPaths = getAssetPaths("./src/fixtures", "map.json");
-  return filterPaths(allMapPaths, pathMatch);
+// gets a set of resource paths for each transaction set in the list
+// for example, all map.json, guide.json, or .resource_ids files across each transaction set
+export const getResourcePathsForTransactionSets = (
+  transactionSets: string[],
+  fileName: string,
+  basePath = DEFAULT_RESOURCE_ID_BASE_PATH)  => {
+  const allResourcePaths = getAssetPaths({ basePath, fileName });
+  return transactionSets.flatMap((txnSet) => filterPaths(allResourcePaths, txnSet));
 }
 
-const getAssetPaths = (basePath: string, defaultResourceName: string): string[] => {
-  const assets = fs.readdirSync(basePath);
+// generic asset path retrieval (internal helper used for getting function
+// paths as well as resource paths for transaction sets
+const getAssetPaths = (resourceFile: Required<ResourceFile>): string[] => {
+  const assets = fs.readdirSync(resourceFile.basePath);
 
   return assets.reduce((collectedAssets: string[], assetName) => {
-      if (fs.lstatSync(`${basePath}/${assetName}`).isFile() ||
-        !fs.existsSync(`${basePath}/${assetName}/${defaultResourceName}`)) {
+      if (fs.lstatSync(`${resourceFile.basePath}/${assetName}`).isFile() ||
+        !fs.existsSync(`${resourceFile.basePath}/${assetName}/${resourceFile.fileName}`)) {
         return collectedAssets;
       }
 
-      return collectedAssets.concat(`${basePath}/${assetName}/${defaultResourceName}`);
+      return collectedAssets.concat(`${resourceFile.basePath}/${assetName}/${resourceFile.fileName}`);
   }, []);
 }
 
+// helper function to filter out paths that don't include the `pathMatch` string, and to check for `no match`
 const filterPaths = (paths: string[], pathMatch?: string): string[] => {
   if (pathMatch) paths = paths.filter((path) => path.includes(`/${pathMatch}`));
 
@@ -66,4 +84,34 @@ const filterPaths = (paths: string[], pathMatch?: string): string[] => {
   }
 
   return paths;
+}
+
+// read environment variable file and parse contents
+export const getExistingResourceIdEnvVars = (resourceFilePath: string): dotenv.DotenvParseOutput | undefined => {
+  if (fs.existsSync(resourceFilePath)) {
+    const contents = fs.readFileSync(resourceFilePath);
+    return dotenv.parse(contents);
+  }
+
+  return undefined;
+}
+
+export const writeResourceIdsFile = (envVars: Record<string, string>, resourceBasePath: string) => {
+  const resourceFilePath = getResourceIdFilePath(resourceBasePath);
+  const envVarEntries = Object.entries(envVars).reduce((fileContents: string, [key, value]) => {
+    return fileContents.concat(`${key}=${value}\n`);
+  }, "");
+
+  fs.writeFileSync(resourceFilePath, envVarEntries);
+}
+
+export const getResourceIdFilePath = (resourceBasePath: string): string => ( `${resourceBasePath}/${DEFAULT_RESOURCE_ID_FILE_NAME}` );
+
+export const printResourceSummary = (resourceType: ResourceType, resources: ResourceDetails[]) => {
+  const count = resources.length;
+  const summaryText = `${count > 0
+    ? `Created ${count} ${resourceType}${count > 1 ? "s" : ""}:\n`
+    : `No ${resourceType}s created.`}`;
+  console.log(`\nDone. ${summaryText}`);
+  resources.forEach((resource) => console.log(`${resource.name} (id=${resource.id})`));
 }

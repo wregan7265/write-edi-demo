@@ -1,8 +1,14 @@
-import dotenv from "dotenv";
+import dotenv, { DotenvParseOutput } from "dotenv";
 
 import { compile, packForDeployment } from "../support/compile.js";
 import { createFunction, updateFunction } from "../support/functions.js";
-import { functionNameFromPath, functionNamespaceFromPath, getFunctionPaths } from "../support/utils.js";
+import {
+  functionNameFromPath,
+  getEnabledTransactionSets,
+  getExistingResourceIdEnvVars,
+  getFunctionPaths,
+  getResourcePathsForTransactionSets
+} from "../support/utils.js";
 
 dotenv.config({ override: true });
 
@@ -24,7 +30,6 @@ const createOrUpdateFunction = async (
   const functionPaths = getFunctionPaths(process.argv[2]);
 
   const promises = functionPaths.map(async (fnPath) => {
-    const functionNamespace = functionNamespaceFromPath(fnPath);
     const functionName = functionNameFromPath(fnPath);
 
     console.log(`Deploying ${functionName}`);
@@ -34,9 +39,25 @@ const createOrUpdateFunction = async (
 
     try {
       const functionPackage = new Uint8Array(code);
-      const environmentVariables = dotenv.config().parsed ?? {};
+      const baseEnvironmentVariables = dotenv.config().parsed ?? {};
+
+      const resourceIdFiles = getResourcePathsForTransactionSets(getEnabledTransactionSets(), ".resource_ids");
+      const resourceIdEnvironmentVariables = resourceIdFiles.reduce((collectedEnvVars: DotenvParseOutput, resourceIdFile) => {
+        const resourceEnvVars = getExistingResourceIdEnvVars(resourceIdFile);
+        if (!resourceEnvVars) {
+          console.error(`Resource ID env vars not found in expected path: ${resourceIdFile}`);
+          process.exit (-1);
+        }
+
+        return {
+          ...collectedEnvVars,
+          ...resourceEnvVars,
+        }
+      }, {});
+
+      const environmentVariables = { ...baseEnvironmentVariables, ...resourceIdEnvironmentVariables };
+
       environmentVariables["NODE_OPTIONS"] = "--enable-source-maps";
-      environmentVariables["STEDI_FUNCTION_NAMESPACE"] = functionNamespace;
       environmentVariables["STEDI_FUNCTION_NAME"] = functionName;
 
       const result = await createOrUpdateFunction(

@@ -7,6 +7,7 @@ import { PutObjectCommand, PutObjectCommandInput, } from "@stedi/sdk-client-buck
 import { bucketClient } from "../../../lib/buckets.js";
 import { translateJsonToEdi } from "../../../lib/translateV3.js";
 import { failedExecution, generateExecutionId, recordNewExecution } from "../../../lib/execution.js";
+import { requiredEnvVar } from "../../../lib/environment.js";
 
 const baseClientProps = {region: "us"};
 
@@ -22,10 +23,22 @@ const mappingsClient = new MappingsClient({
 
 export const handler = async (event: any): Promise<Record<string, any>> => {
   const executionId = generateExecutionId(event);
-  const functionNamespace = process.env["STEDI_FUNCTION_NAMESPACE"] || "";
 
   try {
     await recordNewExecution(executionId, event);
+
+    if (!event.transactionSet) {
+      return failedExecution(executionId, new Error("Required property `transactionSet` missing from input event"));
+    }
+
+    const transactionSetEnvVarPrefix = event.transactionSet.toUpperCase().replace("-", "_");
+
+    // Fail fast if required env vars are missing
+    const guideEnvVarName = `${transactionSetEnvVarPrefix}_GUIDE_ID`;
+    const mapEnvVarName = `${transactionSetEnvVarPrefix}_MAP_ID`;
+    const guideId = requiredEnvVar(guideEnvVarName);
+    const mapId = requiredEnvVar(mapEnvVarName);
+
     console.log("starting", {input: event, executionId});
 
     const functionalIdentifierCode = "OW";
@@ -43,7 +56,10 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       })
     );
 
-    if (!controlNumber) return failedExecution(executionId, new Error("Issue generating control number"));
+    if (!controlNumber) {
+      return failedExecution(executionId, new Error("Issue generating control number"));
+    }
+
     controlNumber = controlNumber.toString().padStart(9, "0");
 
     const envelope = {
@@ -67,22 +83,12 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       },
     };
 
-    const mapEnvVarName = `${functionNamespace.toUpperCase()}_MAP_ID`;
-    const mapId = process.env[mapEnvVarName];
-    if (mapId === undefined)
-      return failedExecution(executionId, new Error(`Missing ${mapEnvVarName} environment variable`));
-
     const mapResult = await mappingsClient.send(
       new MapDocumentCommand({
         id: mapId,
         content: {controlNumber, ...event},
       })
     );
-
-    const guideEnvVarName = `${functionNamespace.toUpperCase()}_GUIDE_ID`;
-    const guideId = process.env[guideEnvVarName];
-    if (guideId === undefined)
-      return failedExecution(executionId, new Error(`Missing ${guideEnvVarName} environment variable`));
 
     const translation = await translateJsonToEdi(mapResult.content, guideId, envelope);
 
@@ -93,10 +99,12 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
     };
     await bucketClient().send(new PutObjectCommand(putCommandArgs));
 
-    return putCommandArgs;
+    return {
+      statusCode: 200,
+      ...putCommandArgs
+    };
   } catch (e) {
     const error = e instanceof Error ? e : new Error(`unknown error: ${JSON.stringify(e)}`);
     return failedExecution(executionId, error);
   }
 };
-
