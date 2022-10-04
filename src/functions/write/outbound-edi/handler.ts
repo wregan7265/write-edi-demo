@@ -7,19 +7,18 @@ import { PutObjectCommand, PutObjectCommandInput, } from "@stedi/sdk-client-buck
 import { bucketClient } from "../../../lib/buckets.js";
 import { translateJsonToEdi } from "../../../lib/translateV3.js";
 import { failedExecution, generateExecutionId, recordNewExecution } from "../../../lib/execution.js";
-import { requiredEnvVar } from "../../../lib/environment.js";
+import { getEnvVarNameForResource, requiredEnvVar } from "../../../lib/environment.js";
 
-const baseClientProps = {region: "us"};
+const sdkClientProps = {
+  apiKey: requiredEnvVar("STEDI_API_KEY"),
+  region: "us",
+};
 
-const stashClient = new StashClient({
-  ...baseClientProps,
-  apiKey: process.env.STEDI_API_KEY,
-});
+const stashClient = new StashClient(sdkClientProps);
+const mappingsClient = new MappingsClient(sdkClientProps);
 
-const mappingsClient = new MappingsClient({
-  ...baseClientProps,
-  apiKey: process.env.STEDI_API_KEY,
-});
+// buckets client is shared across handler and execution tracking logic
+const bucketsClient = bucketClient();
 
 export const handler = async (event: any): Promise<Record<string, any>> => {
   const executionId = generateExecutionId(event);
@@ -31,15 +30,13 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       return failedExecution(executionId, new Error("Required property `transactionSet` missing from input event"));
     }
 
-    const transactionSetEnvVarPrefix = event.transactionSet.toUpperCase().replace("-", "_");
-
     // Fail fast if required env vars are missing
-    const guideEnvVarName = `${transactionSetEnvVarPrefix}_GUIDE_ID`;
-    const mapEnvVarName = `${transactionSetEnvVarPrefix}_MAPPING_ID`;
+    const guideEnvVarName = getEnvVarNameForResource("guide", event.transactionSet);
+    const mappingEnvVarName = getEnvVarNameForResource("mapping", event.transactionSet);
     const guideId = requiredEnvVar(guideEnvVarName);
-    const mapId = requiredEnvVar(mapEnvVarName);
+    const mappingId = requiredEnvVar(mappingEnvVarName);
 
-    console.log("starting", {input: event, executionId});
+    console.log("starting", { input: event, executionId });
 
     const functionalIdentifierCode = "OW";
     const senderId = "AMERCHANT";
@@ -48,7 +45,8 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
 
     const documentDate = new Date();
 
-    let {value: controlNumber} = await stashClient.send(
+    // Generate control number for sender/receiver pair
+    let { value: controlNumber } = await stashClient.send(
       new IncrementValueCommand({
         keyspaceName: "outbound-control-numbers",
         key: `${usageIndicatorCode}-${functionalIdentifierCode}-${senderId}-${receiverId}`,
@@ -62,6 +60,7 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
 
     controlNumber = controlNumber.toString().padStart(9, "0");
 
+    // Configure envelope data (interchange control header and functional group header) to combine with mapping result
     const envelope = {
       interchangeHeader: {
         senderQualifier: "ZZ",
@@ -83,21 +82,24 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       },
     };
 
+    // Execute mapping to transform API JSON input to Guide schema-based JSON
     const mapResult = await mappingsClient.send(
       new MapDocumentCommand({
-        id: mapId,
-        content: {controlNumber, ...event},
+        id: mappingId,
+        content: { controlNumber, ...event },
       })
     );
 
+    // Translate the Guide schema-based JSON to X12 EDI
     const translation = await translateJsonToEdi(mapResult.content, guideId, envelope);
 
+    // Save generated X12 EDI file to SFTP-accessible Bucket
     const putCommandArgs: PutObjectCommandInput = {
       bucketName: process.env.SFTP_BUCKET_NAME,
       key: `trading_partners/${receiverId}/outbound/${controlNumber}.edi`,
       body: translation.output,
     };
-    await bucketClient().send(new PutObjectCommand(putCommandArgs));
+    await bucketsClient.send(new PutObjectCommand(putCommandArgs));
 
     return {
       statusCode: 200,

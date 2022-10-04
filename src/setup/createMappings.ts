@@ -5,12 +5,13 @@ import dotenv from "dotenv";
 import { CreateMappingCommandInput } from "@stedi/sdk-client-mappings";
 
 import {
+  generateResourceIdEnvVars,
   getEnabledTransactionSets,
   getResourcePathsForTransactionSets,
-  getResourceIdEnvVars,
   printResourceEnvVarSummary,
+  removeExistingResourceIdEnvVars,
   resourceNamespaceFromPath,
-  updateDotEnvFile, removeExistingResourceIdEnvVars,
+  updateDotEnvFile,
 } from "../support/utils.js";
 import { ensureMappingExists } from "../support/mapping.js";
 
@@ -35,7 +36,7 @@ dotenv.config({ override: true });
   }, []);
 
   const mappingsDetails = await Promise.all(promises);
-  const mappingIdEnvVars = getResourceIdEnvVars("mapping", mappingsDetails);
+  const mappingIdEnvVars = generateResourceIdEnvVars("mapping", mappingsDetails);
   const existingEnvVars = removeExistingResourceIdEnvVars("mapping", dotenv.config().parsed);
   updateDotEnvFile({
     ...existingEnvVars,
