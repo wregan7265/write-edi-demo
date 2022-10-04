@@ -161,7 +161,7 @@ Once deployed, you may access the Function Web UI and perform the following step
 
 1. Clicking on the `Edit environment variables` link will allow you to see the variables that were populated during the deploy step. The values will include the values from your `.env` file, as well as values from the `.resource_ids` files for the transaction sets that you included in the `ENABLED_TRANSACTION_SETS` list.
 
-1. Click the `Edit execution payload` link, paste the contents of [src/resources/X12-850/input.json](src/resources/X12-850/input.json) into the payload modal, and click save. You can choose an `input.json` for any one of the [transaction sets](src/resources) that you included in the `ENABLED_TRANSACTION_SETS` list, but we'll show X12-850 in the examples below.
+1. Click the `Edit execution payload` link, paste the contents of [src/resources/X12-850/input.json](src/resources/X12-850/input.json) into the payload modal, and click save. You can choose an `input.json` for any one of the [transaction sets](src/resources) included in the `ENABLED_TRANSACTION_SETS` list, but we'll show X12-850 in the examples below.
 
 1. Hit the `Execute` button, if successful the `Output` should look similar to the following (this example output was created using the [input](src/resources/X12-850/input.json) for the `X12-850` transaction set):
 
