@@ -100,7 +100,6 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
    npm run configure-buckets
    ```
 
-   This will output environment variable entries for both the SFTP and Executions Buckets. Copy these entries to the `.env` file that you created earlier.
    For each bucket, an environment variable entry will automatically be added to the `.env` file. The output of the script will include a list of the environment variables that have been added:
 
    ```bash
@@ -180,13 +179,25 @@ Once deployed, you may access the Function Web UI and perform the following step
 1. You may also connect using your preferred SFTP client and the user credentials provisioned earlier to retrieve the file.
 
 1. You can also view the other resources that were created during setup in the UIs for the associated products:
-   - [Guides Web UI](https://www.stedi.com/app/guides)
-   - [Mappings Web UI](https://www.stedi.com/app/mappings)
-   - [Stash Web UI](https://www.stedi.com/app/stash)
+   - [Guides Web UI](https://www.stedi.com/app/guides): a guide for each transaction set that you enabled
+   - [Mappings Web UI](https://www.stedi.com/app/mappings): a mapping for each transaction set that you enabled
+   - [Stash Web UI](https://www.stedi.com/app/stash): a keyspace for tracking and incrementing control numbers for generated X12 EDI files
 
+## Function execution tracking
 
-<!--
-  TODO: add details about execution tracking logic
+The `write-outbound-edi` function uses the bucket referenced by the `EXECUTIONS_BUCKET_NAME` environment variable to track details about each invocation of the function.
 
-  ## Function execution tracking
--->
+1. At the beginning of each invocation, an `executionId` is generated. The `executionId` is a hash of the function name and the input payload. This allows subsequent invocations of the function with the same payload to be processed as retries.
+ 
+1. The JSON input to the function is written to the executions bucket in the following location:
+
+   ```bash
+   functions/write-outbound-edi/${executionId}/input.json
+   ```
+1. If any failures are encountered during the execution of the function, the details of the failure are written to the following location:
+
+   ```bash
+   functions/write-outbound-edi/${executionId}/failure.json 
+   ```
+   
+1. Upon successful invocation of the function (either on the initial invocation, or on a subsequent retry with the same input payload), the `input.json` as well as the `failure.json` from previous failed invocations (if present) are deleted. Therefore, any items present in the `executions` bucket represent in-progress executions, or previously failed invocations (with details about the failure).
