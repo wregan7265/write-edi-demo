@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 import { compile, packForDeployment } from "../support/compile.js";
 import { createFunction, updateFunction } from "../support/functions.js";
-import { functionNameFromPath, functionNamespaceFromPath, getFunctionPaths } from "../support/utils.js";
+import { functionNameFromPath, getFunctionPaths, } from "../support/utils.js";
 
 dotenv.config({ override: true });
 
@@ -24,7 +24,6 @@ const createOrUpdateFunction = async (
   const functionPaths = getFunctionPaths(process.argv[2]);
 
   const promises = functionPaths.map(async (fnPath) => {
-    const functionNamespace = functionNamespaceFromPath(fnPath);
     const functionName = functionNameFromPath(fnPath);
 
     console.log(`Deploying ${functionName}`);
@@ -36,7 +35,6 @@ const createOrUpdateFunction = async (
       const functionPackage = new Uint8Array(code);
       const environmentVariables = dotenv.config().parsed ?? {};
       environmentVariables["NODE_OPTIONS"] = "--enable-source-maps";
-      environmentVariables["STEDI_FUNCTION_NAMESPACE"] = functionNamespace;
       environmentVariables["STEDI_FUNCTION_NAME"] = functionName;
 
       const result = await createOrUpdateFunction(

@@ -344,6 +344,7 @@
             "allOf": [
               {
                 "x12-condition": "P0506",
+                "type": "object",
                 "dependentRequired": {
                   "communication_number_qualifier_05": [
                     "communication_number_06"
@@ -470,6 +471,7 @@
                   "allOf": [
                     {
                       "x12-condition": "P0304",
+                      "type": "object",
                       "dependentRequired": {
                         "identification_code_qualifier_03": [
                           "identification_code_04"
@@ -640,8 +642,9 @@
                       "x12-type": "element-numeric",
                       "x12-pos": "04",
                       "type": "number",
-                      "minimum": 0,
-                      "maximum": 999999999999999
+                      "minimum": -999999999999999,
+                      "maximum": 999999999999999,
+                      "x12-max-length": 15
                     },
                     "product_service_id_qualifier_06": {
                       "x12-pos": "06",
@@ -755,108 +758,102 @@
                   }
                 },
                 "service_promotion_allowance_or_charge_information_SAC_loop": {
-                  "x12-type": "loop-array",
-                  "type": "array",
-                  "items": {
-                    "x12-type": "loop-object",
-                    "x12-pos": "1300",
-                    "x12-loop-id": "SAC",
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                      "service_promotion_allowance_or_charge_information_SAC": {
-                        "x12-type": "segment-repeat",
-                        "type": "array",
-                        "items": {
-                          "x12-type": "segment",
-                          "x12-segment-id": "SAC",
-                          "x12-pos": "1300",
-                          "type": "object",
-                          "additionalProperties": false,
-                          "properties": {
-                            "allowance_or_charge_indicator_01": {
-                              "x12-pos": "01",
-                              "type": "string",
-                              "x12-element-type": "ID",
-                              "x12-type": "element-enum",
-                              "x12-codes": {
-                                "A": {
-                                  "description": "Allowance",
-                                  "code": "A"
-                                },
-                                "C": {
-                                  "description": "Charge",
-                                  "code": "C"
-                                },
-                                "P": {
-                                  "description": "Promotion",
-                                  "code": "P"
-                                },
-                                "S": {
-                                  "description": "Service",
-                                  "code": "S"
-                                }
-                              },
-                              "enum": [
-                                "A",
-                                "C",
-                                "P",
-                                "S"
-                              ]
+                  "x12-type": "loop-object",
+                  "x12-pos": "1300",
+                  "x12-loop-id": "SAC",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "service_promotion_allowance_or_charge_information_SAC": {
+                      "x12-type": "segment",
+                      "x12-segment-id": "SAC",
+                      "x12-pos": "1300",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "allowance_or_charge_indicator_01": {
+                          "x12-pos": "01",
+                          "type": "string",
+                          "x12-element-type": "ID",
+                          "x12-type": "element-enum",
+                          "x12-codes": {
+                            "A": {
+                              "description": "Allowance",
+                              "code": "A"
                             },
-                            "service_promotion_allowance_or_charge_code_02": {
-                              "x12-pos": "02",
-                              "type": "string",
-                              "x12-element-type": "ID",
-                              "x12-type": "element-enum",
-                              "x12-codes": {
-                                "C310": {
-                                  "description": "Discount",
-                                  "code": "C310"
-                                },
-                                "E380": {
-                                  "description": "Lift Gate (Truck) or Forklift Service at Pickup/Delivery",
-                                  "code": "E380"
-                                }
-                              },
-                              "enum": [
-                                "C310",
-                                "E380"
-                              ]
+                            "C": {
+                              "description": "Charge",
+                              "code": "C"
                             },
-                            "amount_05": {
-                              "x12-element-type": "N2",
-                              "x12-type": "element-numeric",
-                              "x12-pos": "05",
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 999999999999999
+                            "P": {
+                              "description": "Promotion",
+                              "code": "P"
                             },
-                            "description_15": {
-                              "x12-element-type": "AN",
-                              "x12-type": "element-string",
-                              "x12-pos": "15",
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 80,
-                              "examples": [
-                                "5% AD CO-OP DISCOUNT",
-                                "LIFT GATE ASSIST"
-                              ]
+                            "S": {
+                              "description": "Service",
+                              "code": "S"
                             }
                           },
-                          "required": [
-                            "allowance_or_charge_indicator_01",
-                            "service_promotion_allowance_or_charge_code_02",
-                            "amount_05",
-                            "description_15"
+                          "enum": [
+                            "A",
+                            "C",
+                            "P",
+                            "S"
                           ]
                         },
-                        "minItems": 1,
-                        "maxItems": 25
-                      }
+                        "service_promotion_allowance_or_charge_code_02": {
+                          "x12-pos": "02",
+                          "type": "string",
+                          "x12-element-type": "ID",
+                          "x12-type": "element-enum",
+                          "x12-codes": {
+                            "C310": {
+                              "description": "Discount",
+                              "code": "C310"
+                            },
+                            "E380": {
+                              "description": "Lift Gate (Truck) or Forklift Service at Pickup/Delivery",
+                              "code": "E380"
+                            }
+                          },
+                          "enum": [
+                            "C310",
+                            "E380"
+                          ]
+                        },
+                        "amount_05": {
+                          "x12-element-type": "N2",
+                          "x12-type": "element-numeric",
+                          "x12-pos": "05",
+                          "type": "number",
+                          "minimum": -999999999999999,
+                          "maximum": 999999999999999,
+                          "multipleOf": 0.01
+                        },
+                        "description_15": {
+                          "x12-element-type": "AN",
+                          "x12-type": "element-string",
+                          "x12-pos": "15",
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80,
+                          "examples": [
+                            "5% AD CO-OP DISCOUNT",
+                            "LIFT GATE ASSIST"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "allowance_or_charge_indicator_01",
+                        "service_promotion_allowance_or_charge_code_02",
+                        "amount_05",
+                        "description_15"
+                      ]
                     }
-                  }
+                  },
+                  "required": [
+                    "service_promotion_allowance_or_charge_information_SAC"
+                  ]
                 }
               },
               "required": [
@@ -899,7 +896,7 @@
                       "x12-type": "element-integer",
                       "x12-pos": "01",
                       "type": "integer",
-                      "minimum": 0,
+                      "minimum": -999999,
                       "maximum": 999999
                     }
                   },
@@ -934,8 +931,9 @@
                       "x12-type": "element-numeric",
                       "x12-pos": "02",
                       "type": "number",
-                      "minimum": 0,
-                      "maximum": 999999999999999
+                      "minimum": -999999999999999,
+                      "maximum": 999999999999999,
+                      "x12-max-length": 15
                     }
                   },
                   "required": [
@@ -962,7 +960,7 @@
                 "x12-type": "element-integer",
                 "x12-pos": "01",
                 "type": "integer",
-                "minimum": 0,
+                "minimum": -9999999999,
                 "maximum": 9999999999
               },
               "transaction_set_control_number_02": {

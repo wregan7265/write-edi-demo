@@ -54,10 +54,14 @@ export const markExecutionAsSuccessful = async (executionId: string) => {
   return { inputResult, failureResult };
 };
 
-export const failedExecution = async (executionId: string, error: Error): Promise<{ message: string, failureRecord: FailureRecord, error: ErrorObject }> => {
+export const failedExecution = async (
+  executionId: string,
+  error: Error
+): Promise<{ statusCode: number, message: string, failureRecord: FailureRecord, error: ErrorObject }> => {
   const rawError = serializeError(error)
   const failureRecord = await markExecutionAsFailed(executionId, rawError);
-  return { message: "execution failed", failureRecord, error: rawError }
+  const statusCode = (error as any)?.["$metadata"]?.httpStatusCode || 500;
+  return { statusCode, message: "execution failed", failureRecord, error: rawError }
 }
 
 const markExecutionAsFailed = async (

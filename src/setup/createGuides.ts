@@ -4,18 +4,23 @@ import dotenv from "dotenv";
 
 import { CreateGuideInput } from "@stedi/sdk-client-guides";
 
-import { createGuide, publishGuide } from "../support/guide.js";
-import { fixtureNamespaceFromPath, getGuidePaths } from "../support/utils.js";
+import {
+  getResourcePathsForTransactionSets,
+  getEnabledTransactionSets,
+  getResourceIdEnvVars,
+  printResourceEnvVarSummary,
+  resourceNamespaceFromPath,
+  updateDotEnvFile, removeExistingResourceIdEnvVars,
+} from "../support/utils.js";
+import { ensureGuideExists } from "../support/guide.js";
 
 dotenv.config({ override: true });
 
 (async () => {
-  const guidePaths = getGuidePaths(process.argv[2]);
+  const guidePaths = getResourcePathsForTransactionSets(getEnabledTransactionSets(), "guide.json");
 
   const promises = guidePaths.map(async (guidePath) => {
-    const guideName = fixtureNamespaceFromPath(guidePath);
-
-    console.log(`Creating guide: ${guideName}`);
+    const namespace = resourceNamespaceFromPath(guidePath);
 
     const rawGuide = fs.readFileSync(
       path.join(process.cwd(), guidePath),
@@ -23,12 +28,19 @@ dotenv.config({ override: true });
     );
 
     const guide = JSON.parse(rawGuide) as CreateGuideInput;
+    console.log(`[${namespace}] Creating guide with name: "${guide.name}"`);
 
-    const guideId = await createGuide(guide);
-    await publishGuide(guideId);
-
-    console.log(`${guideName.toUpperCase()}_GUIDE_ID=${guideId.split("_")[1]}`);
+    const guideId = await ensureGuideExists(namespace, guide);
+    return { name: namespace, id: guideId };
   });
 
-  await Promise.all(promises);
+  const guidesDetails = await Promise.all(promises);
+  const guideIdEnvVars = getResourceIdEnvVars("guide", guidesDetails);
+  const existingEnvVars = removeExistingResourceIdEnvVars("guide", dotenv.config().parsed);
+  updateDotEnvFile({
+    ...existingEnvVars,
+    ...guideIdEnvVars,
+  });
+  console.log(`\nDone.`);
+  printResourceEnvVarSummary("guide", guideIdEnvVars);
 })();

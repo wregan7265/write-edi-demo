@@ -11,6 +11,7 @@ import {
 } from "@stedi/sdk-client-buckets";
 
 import { bucketClient } from "../lib/buckets.js";
+import { printResourceEnvVarSummary, updateDotEnvFile } from "../support/utils.js";
 
 dotenv.config({ override: true });
 
@@ -53,8 +54,19 @@ dotenv.config({ override: true });
     }));
   }
 
-  console.log(`SFTP_BUCKET_NAME=${user.bucketName}`);
-  console.log(`EXECUTIONS_BUCKET_NAME=${executionsBucketName}`);
+  const bucketEnvVarEntries: dotenv.DotenvParseOutput = {
+    ["SFTP_BUCKET_NAME"]: user.bucketName,
+    ["EXECUTIONS_BUCKET_NAME"]: executionsBucketName,
+  };
+
+  const existingEnvVars = dotenv.config().parsed ?? {};
+  updateDotEnvFile({
+    ...existingEnvVars,
+    ...bucketEnvVarEntries,
+  });
+
+  console.log(`\nDone.`);
+  printResourceEnvVarSummary("bucket", bucketEnvVarEntries);
 
   // Clean up temporary user and corresponding home directory
   await sftpClient.send(new DeleteUserCommand({username: user.username}));

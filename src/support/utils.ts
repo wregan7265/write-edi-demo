@@ -1,4 +1,22 @@
-import fs from "node:fs";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
+import { requiredEnvVar } from "../lib/environment.js";
+
+const DEFAULT_RESOURCE_ID_BASE_PATH = "./src/resources";
+const DEFAULT_DOT_ENV_FILE_PATH = "./.env";
+
+type ResourceFile = {
+  basePath: string;
+  fileName?: string;
+};
+
+type ResourceType = "bucket" | "guide" | "mapping";
+
+export type ResourceDetails = {
+  name: string;
+  id: string;
+};
 
 export const functionNameFromPath = (fnPath: string): string => {
   // get function name excluding extension
@@ -7,56 +25,57 @@ export const functionNameFromPath = (fnPath: string): string => {
   return fnPath.split("/").slice(-3, -1).join("-");
 };
 
-export const functionNamespaceFromPath = (fnPath: string): string => {
-  // get function name excluding extension
-  // path-a/path-b/path-never-ends/nice/function/handler.ts
-  // => nice-function
-  return fnPath.split("/").slice(-3, -1)[0];
-};
-
-export const fixtureNamespaceFromPath = (path: string): string => {
-  // path-a/path-b/path-never-ends/nice/fixtures/read/map.json
+export const resourceNamespaceFromPath = (path: string): string => {
+  // path-a/path-b/path-never-ends/nice/resources/X12-850/map.json
   // => read
   return path.split('/').slice(-2, -1)[0];
 }
 
 export const getFunctionPaths = (pathMatch?: string) => {
-  const basePath = "./src/functions";
-  const namespaces = fs.readdirSync(basePath);
+  const functionsRoot = "./src/functions";
+  const namespaces = fs.readdirSync(functionsRoot);
 
   const allFunctionPaths = namespaces.reduce(
     (paths: string[], namespace) => {
-    if (fs.lstatSync(`./src/functions/${namespace}`).isFile()) return paths;
+    if (fs.lstatSync(`${functionsRoot}/${namespace}`).isFile()) return paths;
 
-    return paths.concat(getAssetPaths(`${basePath}/${namespace}`, "handler.ts"));
+    return paths.concat(getAssetPaths({ basePath: `${functionsRoot}/${namespace}`, fileName: "handler.ts" }));
   }, []);
 
   return filterPaths(allFunctionPaths, pathMatch);
 };
 
-export const getGuidePaths = (pathMatch?: string) => {
-  const allGuidePaths = getAssetPaths("./src/fixtures", "guide.json");
-  return filterPaths(allGuidePaths, pathMatch);
+export const getEnabledTransactionSets = (): string[] => {
+  const enabledTransactionSetsList = requiredEnvVar("ENABLED_TRANSACTION_SETS");
+  return enabledTransactionSetsList.split(",");
 }
 
-export const getMapPaths = (pathMatch?: string) => {
-  const allMapPaths = getAssetPaths("./src/fixtures", "map.json");
-  return filterPaths(allMapPaths, pathMatch);
+// gets a set of resource paths for each transaction set in the list
+// for example, all map.json or guide.json files across each transaction set
+export const getResourcePathsForTransactionSets = (
+  transactionSets: string[],
+  fileName: string,
+  basePath = DEFAULT_RESOURCE_ID_BASE_PATH)  => {
+  const allResourcePaths = getAssetPaths({ basePath, fileName });
+  return transactionSets.flatMap((txnSet) => filterPaths(allResourcePaths, txnSet));
 }
 
-const getAssetPaths = (basePath: string, defaultResourceName: string): string[] => {
-  const assets = fs.readdirSync(basePath);
+// generic asset path retrieval (internal helper used for getting function
+// paths as well as resource paths for transaction sets
+const getAssetPaths = (resourceFile: Required<ResourceFile>): string[] => {
+  const assets = fs.readdirSync(resourceFile.basePath);
 
   return assets.reduce((collectedAssets: string[], assetName) => {
-      if (fs.lstatSync(`${basePath}/${assetName}`).isFile() ||
-        !fs.existsSync(`${basePath}/${assetName}/${defaultResourceName}`)) {
+      if (fs.lstatSync(`${resourceFile.basePath}/${assetName}`).isFile() ||
+        !fs.existsSync(`${resourceFile.basePath}/${assetName}/${resourceFile.fileName}`)) {
         return collectedAssets;
       }
 
-      return collectedAssets.concat(`${basePath}/${assetName}/${defaultResourceName}`);
+      return collectedAssets.concat(`${resourceFile.basePath}/${assetName}/${resourceFile.fileName}`);
   }, []);
 }
 
+// helper function to filter out paths that don't include the `pathMatch` string, and to check for `no match`
 const filterPaths = (paths: string[], pathMatch?: string): string[] => {
   if (pathMatch) paths = paths.filter((path) => path.includes(`/${pathMatch}`));
 
@@ -67,3 +86,57 @@ const filterPaths = (paths: string[], pathMatch?: string): string[] => {
 
   return paths;
 }
+
+export const getResourceIdEnvVars = (
+  resourceType: ResourceType,
+  resourceDetails: ResourceDetails[],
+): dotenv.DotenvParseOutput => {
+  const suffix = getEnvVarSuffixForResourceType(resourceType);
+  const envVarEntries = resourceDetails.map((resourceDetailItem) => {
+    const resourceEnvVarName = resourceDetailItem.name.toUpperCase().replace("-", "_").concat(suffix);
+    return [resourceEnvVarName, resourceDetailItem.id];
+  });
+
+  return Object.fromEntries(envVarEntries);
+};
+
+export const removeExistingResourceIdEnvVars = (
+  resourceType: ResourceType,
+  existingEnvVars?: dotenv.DotenvParseOutput
+): dotenv.DotenvParseOutput => {
+  if (!existingEnvVars) {
+    return {};
+  }
+
+  const suffix = getEnvVarSuffixForResourceType(resourceType);
+  const updatedEnvVars = Object.entries(existingEnvVars).reduce((updatedEntries: string[][], [key, value]) => {
+    // only keep env vars that don't end with resource-type suffix
+    if (!key.includes(suffix)) {
+      updatedEntries.push([key, value]);
+    }
+
+    return updatedEntries;
+  }, []);
+
+  return Object.fromEntries(updatedEnvVars);
+}
+
+export const updateDotEnvFile = (envVars: dotenv.DotenvParseOutput) => {
+  const envVarEntries = Object.entries(envVars).reduce((fileContents: string, [key, value]) => {
+    return fileContents.concat(`${key}=${value}\n`);
+  }, "");
+
+  fs.writeFileSync(DEFAULT_DOT_ENV_FILE_PATH, envVarEntries);
+};
+
+export const printResourceEnvVarSummary = (resourceType: ResourceType, resourceEnvEntries: dotenv.DotenvParseOutput) => {
+  const entries = Object.entries(resourceEnvEntries);
+  const count = entries.length;
+  console.log(`\nUpdated ${path.basename(DEFAULT_DOT_ENV_FILE_PATH)} file with ${count} ${resourceType} ${count > 1 ? "entries" : "entry"}:\n`);
+
+  entries.forEach(([key, value]) => {
+    console.log(`${key}=${value}`);
+  });
+};
+
+const getEnvVarSuffixForResourceType = (resourceType: ResourceType): string =>  `_${resourceType.toUpperCase()}_ID`;
