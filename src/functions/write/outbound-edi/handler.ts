@@ -35,7 +35,7 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
 
     // Fail fast if required env vars are missing
     const guideEnvVarName = `${transactionSetEnvVarPrefix}_GUIDE_ID`;
-    const mapEnvVarName = `${transactionSetEnvVarPrefix}_MAP_ID`;
+    const mapEnvVarName = `${transactionSetEnvVarPrefix}_MAPPING_ID`;
     const guideId = requiredEnvVar(guideEnvVarName);
     const mapId = requiredEnvVar(mapEnvVarName);
 

@@ -1,14 +1,8 @@
-import dotenv, { DotenvParseOutput } from "dotenv";
+import dotenv from "dotenv";
 
 import { compile, packForDeployment } from "../support/compile.js";
 import { createFunction, updateFunction } from "../support/functions.js";
-import {
-  functionNameFromPath,
-  getEnabledTransactionSets,
-  getExistingResourceIdEnvVars,
-  getFunctionPaths,
-  getResourcePathsForTransactionSets
-} from "../support/utils.js";
+import { functionNameFromPath, getFunctionPaths, } from "../support/utils.js";
 
 dotenv.config({ override: true });
 
@@ -39,24 +33,7 @@ const createOrUpdateFunction = async (
 
     try {
       const functionPackage = new Uint8Array(code);
-      const baseEnvironmentVariables = dotenv.config().parsed ?? {};
-
-      const resourceIdFiles = getResourcePathsForTransactionSets(getEnabledTransactionSets(), ".resource_ids");
-      const resourceIdEnvironmentVariables = resourceIdFiles.reduce((collectedEnvVars: DotenvParseOutput, resourceIdFile) => {
-        const resourceEnvVars = getExistingResourceIdEnvVars(resourceIdFile);
-        if (!resourceEnvVars) {
-          console.error(`Resource ID env vars not found in expected path: ${resourceIdFile}`);
-          process.exit (-1);
-        }
-
-        return {
-          ...collectedEnvVars,
-          ...resourceEnvVars,
-        }
-      }, {});
-
-      const environmentVariables = { ...baseEnvironmentVariables, ...resourceIdEnvironmentVariables };
-
+      const environmentVariables = dotenv.config().parsed ?? {};
       environmentVariables["NODE_OPTIONS"] = "--enable-source-maps";
       environmentVariables["STEDI_FUNCTION_NAME"] = functionName;
 

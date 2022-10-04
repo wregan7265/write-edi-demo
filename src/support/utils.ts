@@ -1,16 +1,17 @@
 import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
 import { requiredEnvVar } from "../lib/environment.js";
 
 const DEFAULT_RESOURCE_ID_BASE_PATH = "./src/resources";
-const DEFAULT_RESOURCE_ID_FILE_NAME = ".resource_ids";
+const DEFAULT_DOT_ENV_FILE_PATH = "./.env";
 
 type ResourceFile = {
   basePath: string;
   fileName?: string;
 };
 
-type ResourceType = "mapping" | "guide";
+type ResourceType = "bucket" | "guide" | "mapping";
 
 export type ResourceDetails = {
   name: string;
@@ -50,7 +51,7 @@ export const getEnabledTransactionSets = (): string[] => {
 }
 
 // gets a set of resource paths for each transaction set in the list
-// for example, all map.json, guide.json, or .resource_ids files across each transaction set
+// for example, all map.json or guide.json files across each transaction set
 export const getResourcePathsForTransactionSets = (
   transactionSets: string[],
   fileName: string,
@@ -86,32 +87,56 @@ const filterPaths = (paths: string[], pathMatch?: string): string[] => {
   return paths;
 }
 
-// read environment variable file and parse contents
-export const getExistingResourceIdEnvVars = (resourceFilePath: string): dotenv.DotenvParseOutput | undefined => {
-  if (fs.existsSync(resourceFilePath)) {
-    const contents = fs.readFileSync(resourceFilePath);
-    return dotenv.parse(contents);
+export const getResourceIdEnvVars = (
+  resourceType: ResourceType,
+  resourceDetails: ResourceDetails[],
+): dotenv.DotenvParseOutput => {
+  const suffix = getEnvVarSuffixForResourceType(resourceType);
+  const envVarEntries = resourceDetails.map((resourceDetailItem) => {
+    const resourceEnvVarName = resourceDetailItem.name.toUpperCase().replace("-", "_").concat(suffix);
+    return [resourceEnvVarName, resourceDetailItem.id];
+  });
+
+  return Object.fromEntries(envVarEntries);
+};
+
+export const removeExistingResourceIdEnvVars = (
+  resourceType: ResourceType,
+  existingEnvVars?: dotenv.DotenvParseOutput
+): dotenv.DotenvParseOutput => {
+  if (!existingEnvVars) {
+    return {};
   }
 
-  return undefined;
+  const suffix = getEnvVarSuffixForResourceType(resourceType);
+  const updatedEnvVars = Object.entries(existingEnvVars).reduce((updatedEntries: string[][], [key, value]) => {
+    // only keep env vars that don't end with resource-type suffix
+    if (!key.includes(suffix)) {
+      updatedEntries.push([key, value]);
+    }
+
+    return updatedEntries;
+  }, []);
+
+  return Object.fromEntries(updatedEnvVars);
 }
 
-export const writeResourceIdsFile = (envVars: Record<string, string>, resourceBasePath: string) => {
-  const resourceFilePath = getResourceIdFilePath(resourceBasePath);
+export const updateDotEnvFile = (envVars: dotenv.DotenvParseOutput) => {
   const envVarEntries = Object.entries(envVars).reduce((fileContents: string, [key, value]) => {
     return fileContents.concat(`${key}=${value}\n`);
   }, "");
 
-  fs.writeFileSync(resourceFilePath, envVarEntries);
-}
+  fs.writeFileSync(DEFAULT_DOT_ENV_FILE_PATH, envVarEntries);
+};
 
-export const getResourceIdFilePath = (resourceBasePath: string): string => ( `${resourceBasePath}/${DEFAULT_RESOURCE_ID_FILE_NAME}` );
+export const printResourceEnvVarSummary = (resourceType: ResourceType, resourceEnvEntries: dotenv.DotenvParseOutput) => {
+  const entries = Object.entries(resourceEnvEntries);
+  const count = entries.length;
+  console.log(`\nUpdated ${path.basename(DEFAULT_DOT_ENV_FILE_PATH)} file with ${count} ${resourceType} ${count > 1 ? "entries" : "entry"}:\n`);
 
-export const printResourceSummary = (resourceType: ResourceType, resources: ResourceDetails[]) => {
-  const count = resources.length;
-  const summaryText = `${count > 0
-    ? `Created ${count} ${resourceType}${count > 1 ? "s" : ""}:\n`
-    : `No ${resourceType}s created.`}`;
-  console.log(`\nDone. ${summaryText}`);
-  resources.forEach((resource) => console.log(`${resource.name} (id=${resource.id})`));
-}
+  entries.forEach(([key, value]) => {
+    console.log(`${key}=${value}`);
+  });
+};
+
+const getEnvVarSuffixForResourceType = (resourceType: ResourceType): string =>  `_${resourceType.toUpperCase()}_ID`;

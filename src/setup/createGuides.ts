@@ -2,30 +2,25 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
-import { CreateGuideInput, ResourceConflictException } from "@stedi/sdk-client-guides";
+import { CreateGuideInput } from "@stedi/sdk-client-guides";
 
-import { createGuide, publishGuide } from "../support/guide.js";
 import {
-  resourceNamespaceFromPath,
   getResourcePathsForTransactionSets,
-  writeResourceIdsFile,
-  getExistingResourceIdEnvVars,
-  printResourceSummary,
-  ResourceDetails,
-  getResourceIdFilePath,
-  getEnabledTransactionSets
+  getEnabledTransactionSets,
+  getResourceIdEnvVars,
+  printResourceEnvVarSummary,
+  resourceNamespaceFromPath,
+  updateDotEnvFile, removeExistingResourceIdEnvVars,
 } from "../support/utils.js";
+import { ensureGuideExists } from "../support/guide.js";
 
-dotenv.config({override: true});
+dotenv.config({ override: true });
 
 (async () => {
   const guidePaths = getResourcePathsForTransactionSets(getEnabledTransactionSets(), "guide.json");
 
-  let createdGuides: ResourceDetails[] = [];
   const promises = guidePaths.map(async (guidePath) => {
-    const guideName = resourceNamespaceFromPath(guidePath);
-
-    console.log(`Creating guide: ${guideName}`);
+    const namespace = resourceNamespaceFromPath(guidePath);
 
     const rawGuide = fs.readFileSync(
       path.join(process.cwd(), guidePath),
@@ -33,32 +28,19 @@ dotenv.config({override: true});
     );
 
     const guide = JSON.parse(rawGuide) as CreateGuideInput;
+    console.log(`[${namespace}] Creating guide with name: "${guide.name}"`);
 
-    let guideId;
-    try {
-      guideId = await createGuide(guide);
-      await publishGuide(guideId);
-    } catch (e) {
-      if (e instanceof ResourceConflictException) {
-        console.log(`Guide already exists (skipping): ${guideName}`);
-        return
-      }
-
-      // Exit with error code for all other errors
-      console.log(`Error creating guide: ${JSON.stringify(e)}`);
-      process.exit(-1);
-    }
-
-    const guideDir = path.dirname(guidePath);
-    const guideEnvVarName = `${guideName.toUpperCase().replace("-", "_")}_GUIDE_ID`;
-
-    const envVars = getExistingResourceIdEnvVars(getResourceIdFilePath(guideDir)) || {};
-    envVars[guideEnvVarName] = guideId.split("_")[1];
-    writeResourceIdsFile(envVars, guideDir);
-
-    createdGuides.push({ name: guideName, id: guideId });
+    const guideId = await ensureGuideExists(namespace, guide);
+    return { name: namespace, id: guideId };
   });
 
-  await Promise.all(promises);
-  printResourceSummary("guide", createdGuides);
+  const guidesDetails = await Promise.all(promises);
+  const guideIdEnvVars = getResourceIdEnvVars("guide", guidesDetails);
+  const existingEnvVars = removeExistingResourceIdEnvVars("guide", dotenv.config().parsed);
+  updateDotEnvFile({
+    ...existingEnvVars,
+    ...guideIdEnvVars,
+  });
+  console.log(`\nDone.`);
+  printResourceEnvVarSummary("guide", guideIdEnvVars);
 })();

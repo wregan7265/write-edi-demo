@@ -28,7 +28,7 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
 * `input.json`: the sample JSON input to the workflow  
    Note, each `input.json` file MUST include a `transactionSet` property whose value matches the name of the directory in which it exists. For example:
   ```json 
-    "transactionSet": "X12-850"
+  "transactionSet": "X12-850"
   ```
   The `transactionSet` attribute is used by the `write-outbound-edi` function to identify the appropriate guide and mapping to use.
 
@@ -42,8 +42,9 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
    git clone https://github.com/Stedi-Demos/write-edi-demo.git
    cd write-edi-demo
    npm install
+   ```
 
-1. This project uses `dotenv` to manage the environmental variables required, you must create a `.env` file in the root directory of this repo and add two environment variables:
+1. This project uses `dotenv` to manage the environmental variables required. You must create a `.env` file in the root directory of this repo and add two environment variables:
    * `STEDI_API_KEY`: Your Stedi API Key - used to deploy the function and internally to interact with product APIs. If you don't already have one, you can generate an [API Key here](https://www.stedi.com/app/settings/api-keys). 
    * `ENABLED_TRANSACTION_SETS`: a comma separated list of transaction sets that you would like to be able to generate EDI documents for. The values in the list MUST match available subdirectory names under the [resources](./src/resources) directory. The names are case sensitive.
 
@@ -58,23 +59,37 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
 1. Create the EDI Guides by running:
 
    ```bash
-     npm run create-guides
+   npm run create-guides
    ```
    
-   For each guide that is created, an environment variable entry will automatically be added to a `.resource_ids` file within the resource template directory for the associated transaction set.
+   For each guide that is created, an environment variable entry will automatically be added to the `.env` file. The output of the script will include a list of the environment variables that have been added:
+
+   ```bash
+   Updated .env file with 2 guide entries:
+
+   X12_850_GUIDE_ID=01GEGDX8T2W6W2MTEAKGER7P3S
+   X12_855_GUIDE_ID=01GEFFW2G33BCYDDKZ7H62T5Z5
+   ```
 
 1. Create the Mappings by running:
 
    ```bash
-   npm run create-maps
+   npm run create-mappings
    ```
 
-   For each mapping that is created, an environment variable entry will automatically be added to a `.resource_ids` file within the resource template directory for the associated transaction set.
+   For each mapping that is created, an environment variable entry will automatically be added to the `.env` file. The output of the script will include a list of the environment variables that have been added:
+ 
+   ```bash
+   Updated .env file with 2 mapping entries:
+
+   X12_850_MAPPING_ID=01GEGCDRB3F1YQSENAWG9978Y7
+   X12_855_MAPPING_ID=01GE0W06T3M0GS1V1AYYCK50HD
+   ```
 
 1. Create the Stash Keyspace to store control numbers:
 
    ```bash
-     npm run create-keyspace
+   npm run create-keyspace
    ```
 
     The Stash Keyspace is used to generate (and increment) [control numbers](https://www.stedi.com/blog/control-numbers-in-x12-edi) to use when generating the EDI documents. 
@@ -82,10 +97,18 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
 1. Configure the Buckets (one for SFTP access and one for tracking function executions):
 
    ```bash
-     npm run configure-buckets
+   npm run configure-buckets
    ```
 
    This will output environment variable entries for both the SFTP and Executions Buckets. Copy these entries to the `.env` file that you created earlier.
+   For each bucket, an environment variable entry will automatically be added to the `.env` file. The output of the script will include a list of the environment variables that have been added:
+
+   ```bash
+   Updated .env file with 2 bucket entries:
+
+   SFTP_BUCKET_NAME=4c22f54a-9ecf-41c8-b404-6a1f20674953-sftp
+   EXECUTIONS_BUCKET_NAME=4c22f54a-9ecf-41c8-b404-6a1f20674953-executions
+   ```
 
 1. [Optional] Provision an SFTP user by visiting the [SFTP Web UI](https://www.stedi.com/app/sftp). This is optional, and is something you can always come back and do later. Creating an SFTP user will allow you to log in to retrieve the generated EDI documents via SFTP. When you do create a user, be sure to record the password (it will not be shown again).
 
@@ -93,14 +116,26 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
 
 This repo includes a basic deployment script to bundle and deploy the `write-outbound-edi` function to Stedi. To deploy you must complete the following steps:
 
-1. Confirm that your `.env` file contains the necessary environment variables: `STEDI_API_KEY`, `ENABLED_TRANSACTION_SETS`, `SFTP_BUCKET_NAME`, and `EXECUTIONS_BUCKET_NAME`. It should look something like the following:
+1. Confirm that your `.env` file contains the necessary environment variables: 
+   - `STEDI_API_KEY` 
+   - `ENABLED_TRANSACTION_SETS` 
+   - `SFTP_BUCKET_NAME`
+   - `EXECUTIONS_BUCKET_NAME`
+   - For each transaction set in the `ENABLED_TRANSACTION_SETS` list:
+     - a `<TXN_SET>_GUIDE_ID` variable
+     - a `<TXN_SET>_MAPPING_ID` variable
+
+   It should look something like the following:
 
    ```
    STEDI_API_KEY=<YOUR_STEDI_API_KEY>
    ENABLED_TRANSACTION_SETS=X12-850,X12-855
-   
-   EXECUTIONS_BUCKET_NAME=<YOUR_EXECUTIONS_BUCKET>
-   SFTP_BUCKET_NAME=<YOUR_SFTP_BUCKET>
+   X12_850_GUIDE_ID=01GEGDX8T2W6W2MTEAKGER7P3S
+   X12_855_GUIDE_ID=01GEFFW2G33BCYDDKZ7H62T5Z5
+   X12_850_MAPPING_ID=01GEGCDRB3F1YQSENAWG9978Y7
+   X12_855_MAPPING_ID=01GE0W06T3M0GS1V1AYYCK50HD
+   SFTP_BUCKET_NAME=4c22f54a-9ecf-41c8-b404-6a1f20674953-sftp
+   EXECUTIONS_BUCKET_NAME=4c22f54a-9ecf-41c8-b404-6a1f20674953-executions
    ```
 
 1. To deploy the function:
