@@ -46,15 +46,15 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
 
 1. This project uses `dotenv` to manage the environmental variables required. You must create a `.env` file in the root directory of this repo and add two environment variables:
    * `STEDI_API_KEY`: Your Stedi API Key - used to deploy the function and internally to interact with product APIs. If you don't already have one, you can generate an [API Key here](https://www.stedi.com/app/settings/api-keys). 
-   * `ENABLED_TRANSACTION_SETS`: a comma separated list of transaction sets that you would like to be able to generate EDI documents for. The values in the list MUST match available subdirectory names under the [resources](./src/resources) directory. The names are case sensitive.
+   * `ENABLED_TRANSACTION_SETS`: a comma separated list of transaction sets that you would like to be able to generate EDI documents for. The values in the list MUST match available subdirectory names under the [resources](./src/resources) directory. The names are case-sensitive. Note: you can always come back and add or remove entries from this list. After doing so, you'll just need to re-run the `create-guides`, `create-mappings`, and `deploy` steps described below in order to apply the changes.
 
-   example `.env` file:
-   ```
-   STEDI_API_KEY=<REPLACE_ME>
-   ENABLED_TRANSACTION_SETS=X12-850,X12-855
-   ```
+  example `.env` file:
+  ```
+  STEDI_API_KEY=<REPLACE_ME>
+  ENABLED_TRANSACTION_SETS=X12-850,X12-855
+  ```
    
-   The subsequent setup scripts will use the `ENABLED_TRANSACTION_SETS` environment variable to determine which resources to deploy to your account.
+  The subsequent setup scripts will use the `ENABLED_TRANSACTION_SETS` environment variable to determine which resources to deploy to your account.
 
 1. Create the EDI Guides by running:
 
