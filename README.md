@@ -41,7 +41,7 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
    ```bash
    git clone https://github.com/Stedi-Demos/write-edi-demo.git
    cd write-edi-demo
-   npm install
+   npm ci
    ```
 
 1. This project uses `dotenv` to manage the environmental variables required. You must create a `.env` file in the root directory of this repo and add two environment variables:

@@ -5,12 +5,13 @@ import dotenv from "dotenv";
 import { CreateGuideInput } from "@stedi/sdk-client-guides";
 
 import {
-  getResourcePathsForTransactionSets,
+  generateResourceIdEnvVars,
   getEnabledTransactionSets,
-  getResourceIdEnvVars,
+  getResourcePathsForTransactionSets,
   printResourceEnvVarSummary,
+  removeExistingResourceIdEnvVars,
   resourceNamespaceFromPath,
-  updateDotEnvFile, removeExistingResourceIdEnvVars,
+  updateDotEnvFile,
 } from "../support/utils.js";
 import { ensureGuideExists } from "../support/guide.js";
 
@@ -35,7 +36,7 @@ dotenv.config({ override: true });
   });
 
   const guidesDetails = await Promise.all(promises);
-  const guideIdEnvVars = getResourceIdEnvVars("guide", guidesDetails);
+  const guideIdEnvVars = generateResourceIdEnvVars("guide", guidesDetails);
   const existingEnvVars = removeExistingResourceIdEnvVars("guide", dotenv.config().parsed);
   updateDotEnvFile({
     ...existingEnvVars,

@@ -1,7 +1,13 @@
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
-import { requiredEnvVar } from "../lib/environment.js";
+
+import {
+  getEnvVarNameForResource,
+  getEnvVarSuffixForResourceType,
+  requiredEnvVar,
+  ResourceType
+} from "../lib/environment.js";
 
 const DEFAULT_RESOURCE_ID_BASE_PATH = "./src/resources";
 const DEFAULT_DOT_ENV_FILE_PATH = "./.env";
@@ -10,8 +16,6 @@ type ResourceFile = {
   basePath: string;
   fileName?: string;
 };
-
-type ResourceType = "bucket" | "guide" | "mapping";
 
 export type ResourceDetails = {
   name: string;
@@ -87,19 +91,20 @@ const filterPaths = (paths: string[], pathMatch?: string): string[] => {
   return paths;
 }
 
-export const getResourceIdEnvVars = (
+// helper function to generate resource id env var entries for a set of resources
+export const generateResourceIdEnvVars = (
   resourceType: ResourceType,
   resourceDetails: ResourceDetails[],
 ): dotenv.DotenvParseOutput => {
-  const suffix = getEnvVarSuffixForResourceType(resourceType);
   const envVarEntries = resourceDetails.map((resourceDetailItem) => {
-    const resourceEnvVarName = resourceDetailItem.name.toUpperCase().replace("-", "_").concat(suffix);
+    const resourceEnvVarName = getEnvVarNameForResource(resourceType, resourceDetailItem.name);
     return [resourceEnvVarName, resourceDetailItem.id];
   });
 
   return Object.fromEntries(envVarEntries);
 };
 
+// helper function to remove resource id env vars for a particular resource type from the existing env vars
 export const removeExistingResourceIdEnvVars = (
   resourceType: ResourceType,
   existingEnvVars?: dotenv.DotenvParseOutput
@@ -138,5 +143,3 @@ export const printResourceEnvVarSummary = (resourceType: ResourceType, resourceE
     console.log(`${key}=${value}`);
   });
 };
-
-const getEnvVarSuffixForResourceType = (resourceType: ResourceType): string =>  `_${resourceType.toUpperCase()}_ID`;
