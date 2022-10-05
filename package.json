@@ -1,7 +1,7 @@
 {
-  "name": "stedi-edi-demos",
-  "version": "1.1.0",
-  "description": "End-to-end demos for reading and writing X12 EDI on Stedi",
+  "name": "stedi-write-edi-demo",
+  "version": "1.0.0",
+  "description": "End-to-end demo for writing X12 EDI on Stedi",
   "main": "index.js",
   "type": "module",
   "scripts": {

@@ -8,17 +8,17 @@ As the illustration below shows, the `write-outbound-edi` function performs seve
 
 1. Accepts a JSON payload of the source data.
 
-2. Calls [Stash](https://www.stedi.com/docs/stash) to generate a control number for the EDI document.
+1. Calls [Stash](https://www.stedi.com/docs/stash) to generate a control number for the EDI document.
 
-3. Passes the incoming source JSON to [Mappings](https://www.stedi.com/docs/mappings) using a predefined Mapping. The Mapping converts the source data to a predefined [Guide](https://www.stedi.com/docs/guides) (which is a JSON Schema).
+1. Passes the incoming source JSON to [Mappings](https://www.stedi.com/docs/mappings) using a predefined Mapping. The Mapping converts the source data to a predefined [Guide](https://www.stedi.com/docs/guides) (which is a JSON Schema).
 
-4. Combines the mapped result, control number & guide id before calling the EDI Translate API.
+1. Combines the mapped result, control number & guide id before calling the EDI Translate API.
 
-5. The [EDI Translate](https://www.stedi.com/docs/edi-translate) API retrieves the guide, validates that the input conforms to the guide schema, and generates the X12 EDI document.
+1. The [EDI Translate](https://www.stedi.com/docs/edi-translate) API retrieves the guide, validates that the input conforms to the guide schema, and generates the X12 EDI document.
 
-6. The function finally saves the EDI string as a file in a [Bucket](https://www.stedi.com/docs/buckets) (for later retrieval via SFTP).
+1. The function finally saves the EDI string as a file in a [Bucket](https://www.stedi.com/docs/buckets) (for later retrieval via SFTP).
 
-![write-edi function flow](./assets/write-edi.jpg)
+![write--outbound-edi function flow](./assets/write-edi.jpg)
 
 ## Resource directories
 
@@ -46,7 +46,7 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
 
 1. This project uses `dotenv` to manage the environmental variables required. You must create a `.env` file in the root directory of this repo and add two environment variables:
    * `STEDI_API_KEY`: Your Stedi API Key - used to deploy the function and internally to interact with product APIs. If you don't already have one, you can generate an [API Key here](https://www.stedi.com/app/settings/api-keys). 
-   * `ENABLED_TRANSACTION_SETS`: a comma separated list of transaction sets that you would like to be able to generate EDI documents for. The values in the list MUST match available subdirectory names under the [resources](./src/resources) directory. The names are case-sensitive. Note: you can always come back and add or remove entries from this list. After doing so, you'll just need to re-run the `create-guides`, `create-mappings`, and `deploy` steps described below in order to apply the changes.
+   * `ENABLED_TRANSACTION_SETS`: a comma separated list of transaction sets for which you would like to be able to generate EDI documents. The values in the list MUST match available subdirectory names under the [resources](./src/resources) directory. The names are case-sensitive. Note: you can always come back and add or remove entries from this list. After doing so, you'll just need to re-run the `create-guides`, `create-mappings`, and `deploy` steps described below in order to apply the changes.
 
   example `.env` file:
   ```

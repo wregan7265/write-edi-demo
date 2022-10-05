@@ -6,7 +6,12 @@ import { PutObjectCommand, PutObjectCommandInput, } from "@stedi/sdk-client-buck
 
 import { bucketClient } from "../../../lib/buckets.js";
 import { translateJsonToEdi } from "../../../lib/translateV3.js";
-import { failedExecution, generateExecutionId, recordNewExecution } from "../../../lib/execution.js";
+import {
+  failedExecution,
+  generateExecutionId,
+  markExecutionAsSuccessful,
+  recordNewExecution,
+} from "../../../lib/execution.js";
 import { getEnvVarNameForResource, requiredEnvVar } from "../../../lib/environment.js";
 
 const sdkClientProps = {
@@ -100,6 +105,8 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       body: translation.output,
     };
     await bucketsClient.send(new PutObjectCommand(putCommandArgs));
+
+    await markExecutionAsSuccessful(executionId);
 
     return {
       statusCode: 200,
