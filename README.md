@@ -10,13 +10,13 @@ As the illustration below shows, the `write-outbound-edi` function performs seve
 
 1. Calls [Stash](https://www.stedi.com/docs/stash) to generate a control number for the EDI document.
 
-1. Passes the incoming source JSON to [Mappings](https://www.stedi.com/docs/mappings) using a predefined Mapping. The Mapping converts the source data to a predefined [Guide](https://www.stedi.com/docs/guides) (which is a JSON Schema).
+1. Passes the incoming source JSON to [Mappings](https://www.stedi.com/docs/mappings) using a predefined mapping. The mapping converts the source data to conform to the JSON Schema of a predefined [guide](https://www.stedi.com/docs/guides).
 
-1. Combines the mapped result, control number & guide id before calling the EDI Translate API.
+1. Combines the mapped result, control number, and guide id before calling the EDI Translate API.
 
 1. The [EDI Translate](https://www.stedi.com/docs/edi-translate) API retrieves the guide, validates that the input conforms to the guide schema, and generates the X12 EDI document.
 
-1. The function finally saves the EDI string as a file in a [Bucket](https://www.stedi.com/docs/buckets).
+1. The function finally saves the EDI string as a file in a [bucket](https://www.stedi.com/docs/buckets).
 
 1. A trading partner can retrieve the EDI from Buckets using [SFTP](https://www.stedi.com/docs/sftp).
 
@@ -24,15 +24,18 @@ As the illustration below shows, the `write-outbound-edi` function performs seve
 
 ## Resource directories
 
-Each subdirectory within the [resources](./src/resources) directory contains templates that can be used to create an EDI document for a specific transaction set from sample JSON input. Each template directory includes:
-* `guide.json`: a [Guide](https://www.stedi.com/docs/guides) used to generate the EDI document
-* `map.json`: a [Mapping](https://www.stedi.com/docs/mappings) that converts the sample JSON input to the schema of the Guide
+The [resources](./src/resources) directory contains templates that can be used to read an EDI document for specific transaction sets. The resource templates are organized in a hierarchical structure of subdirectories in the following pattern: `./src/releases/${ediStandard}/${release}/${transactionType}` (for example: `./src/releases/X12/5010/850`). Each template directory includes:
+* `guide.json`: a [guide](https://www.stedi.com/docs/guides) used to generate the EDI document
+* `map.json`: a [mapping](https://www.stedi.com/docs/mappings) that converts the sample JSON input to the schema of the guide
 * `input.json`: the sample JSON input to the workflow  
-   Note, each `input.json` file MUST include a `transactionSet` property whose value matches the name of the directory in which it exists. For example:
+   Note, each `input.json` file MUST include an `ediMetadata` property that includes `release` and `code` properties that correspond to the release and transaction set code of the resources in that directory. For example:
   ```json 
-  "transactionSet": "X12-850"
+  "ediMetadata": {
+    "release": "5010",
+    "code": "850"
+  }
   ```
-  The `transactionSet` attribute is used by the `write-outbound-edi` function to identify the appropriate guide and mapping to use.
+  The `ediMetadata` property is used by the `write-outbound-edi` function to identify the appropriate guide and mapping to use.
 
 ## Prerequisites
 
@@ -48,12 +51,12 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
 
 1. This project uses `dotenv` to manage the environmental variables required. You must create a `.env` file in the root directory of this repo and add two environment variables:
    * `STEDI_API_KEY`: Your Stedi API Key - used to deploy the function and internally to interact with product APIs. If you don't already have one, you can generate an [API Key here](https://www.stedi.com/app/settings/api-keys). 
-   * `ENABLED_TRANSACTION_SETS`: a comma separated list of transaction sets for which you would like to be able to generate EDI documents. The values in the list MUST match available subdirectory names under the [resources](./src/resources) directory. The names are case-sensitive. Note: you can always come back and add or remove entries from this list. After doing so, you'll just need to re-run the `create-guides`, `create-mappings`, and `deploy` steps described below in order to apply the changes.
+   * `ENABLED_TRANSACTION_SETS`: a comma separated list of transaction sets for which you would like to be able to read inbound EDI documents. The values in the list MUST match available resource sets under the [resources](./src/resources) directory, and conform to the pattern `${ediStandard}-${release}-${transactionType}` (for example: `X12-5010-855`). Note: you can always come back and add or remove entries from this list. After doing so, you'll just need to re-run the `create-guides`, `create-mappings`, and `deploy` steps described below in order to apply the changes.
 
   example `.env` file:
   ```
   STEDI_API_KEY=<REPLACE_ME>
-  ENABLED_TRANSACTION_SETS=X12-850,X12-855
+  ENABLED_TRANSACTION_SETS=X12-5010-850,X12-5010-855
   ```
    
   The subsequent setup scripts will use the `ENABLED_TRANSACTION_SETS` environment variable to determine which resources to deploy to your account.
@@ -69,8 +72,8 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
    ```bash
    Updated .env file with 2 guide entries:
 
-   X12_850_GUIDE_ID=01GEGDX8T2W6W2MTEAKGER7P3S
-   X12_855_GUIDE_ID=01GEFFW2G33BCYDDKZ7H62T5Z5
+   X12_5010_850_GUIDE_ID=01GEGDX8T2W6W2MTEAKGER7P3S
+   X12_5010_855_GUIDE_ID=01GEFFW2G33BCYDDKZ7H62T5Z5
    ```
 
 1. Create the Mappings by running:
@@ -84,8 +87,8 @@ Each subdirectory within the [resources](./src/resources) directory contains tem
    ```bash
    Updated .env file with 2 mapping entries:
 
-   X12_850_MAPPING_ID=01GEGCDRB3F1YQSENAWG9978Y7
-   X12_855_MAPPING_ID=01GE0W06T3M0GS1V1AYYCK50HD
+   X12_5010_850_MAPPING_ID=01GEGCDRB3F1YQSENAWG9978Y7
+   X12_5010_855_MAPPING_ID=01GE0W06T3M0GS1V1AYYCK50HD
    ```
 
 1. Create the Stash Keyspace to store control numbers:
@@ -130,11 +133,11 @@ This repo includes a basic deployment script to bundle and deploy the `write-out
 
    ```
    STEDI_API_KEY=<YOUR_STEDI_API_KEY>
-   ENABLED_TRANSACTION_SETS=X12-850,X12-855
-   X12_850_GUIDE_ID=01GEGDX8T2W6W2MTEAKGER7P3S
-   X12_855_GUIDE_ID=01GEFFW2G33BCYDDKZ7H62T5Z5
-   X12_850_MAPPING_ID=01GEGCDRB3F1YQSENAWG9978Y7
-   X12_855_MAPPING_ID=01GE0W06T3M0GS1V1AYYCK50HD
+   ENABLED_TRANSACTION_SETS=X12-5010-850,X12-5010-855
+   X12_5010_850_GUIDE_ID=01GEGDX8T2W6W2MTEAKGER7P3S
+   X12_5010_855_GUIDE_ID=01GEFFW2G33BCYDDKZ7H62T5Z5
+   X12_5010_850_MAPPING_ID=01GEGCDRB3F1YQSENAWG9978Y7
+   X12_5010_855_MAPPING_ID=01GE0W06T3M0GS1V1AYYCK50HD
    SFTP_BUCKET_NAME=4c22f54a-9ecf-41c8-b404-6a1f20674953-sftp
    EXECUTIONS_BUCKET_NAME=4c22f54a-9ecf-41c8-b404-6a1f20674953-executions
    ```
@@ -147,7 +150,7 @@ This repo includes a basic deployment script to bundle and deploy the `write-out
    This should produce the following output:
 
    ```
-   > stedi-write-edi-demo@1.1.0 deploy
+   > stedi-write-edi-demo@1.0.0 deploy
    > ts-node ./src/setup/deploy.ts
 
    Deploying write-outbound-edi
@@ -161,11 +164,11 @@ Once deployed, you may access the Function Web UI and perform the following step
 
 1. In the [Functions List view](https://www.stedi.com/terminal/functions) you should see a function labelled `write-outbound-edi`, click on it's name to view its details.
 
-1. Clicking on the `Edit environment variables` link will allow you to see the variables that were populated during the deploy step. The values will include the values from your `.env` file, as well as values from the `.resource_ids` files for the transaction sets that you included in the `ENABLED_TRANSACTION_SETS` list.
+1. Clicking on the `Edit environment variables` link will allow you to see the variables that were populated during the deploy step.
 
-1. Click the `Edit execution payload` link, paste the contents of [src/resources/X12-850/input.json](src/resources/X12-850/input.json) into the payload modal, and click save. You can choose an `input.json` for any one of the [transaction sets](src/resources) included in the `ENABLED_TRANSACTION_SETS` list, but we'll show X12-850 in the examples below.
+1. Click the `Edit execution payload` link, paste the contents of [src/resources/X12/5010/850/input.json](src/resources/X12/5010/850/input.json) into the payload modal, and click save. You can choose an `input.json` for any one of the [transaction sets](src/resources) included in the `ENABLED_TRANSACTION_SETS` list, but we'll show X12-5010-850 in the examples below.
 
-1. Hit the `Execute` button, if successful the `Output` should look similar to the following (this example output was created using the [input](src/resources/X12-850/input.json) for the `X12-850` transaction set):
+1. Hit the `Execute` button, if successful the `Output` should look similar to the following (this example output was created using the [input](src/resources/X12/5010/850/input.json) for the `X12-5010-850` transaction set):
 
     ```json
     {

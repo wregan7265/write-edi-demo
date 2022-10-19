@@ -1,4 +1,6 @@
 import { NodeHttpHandler } from "@aws-sdk/node-http-handler";
+import { serializeError } from "serialize-error";
+
 import {
   CreateGuideCommand,
   CreateGuideInput,
@@ -6,19 +8,20 @@ import {
   GuidesClientConfig,
   GuideVisibility,
   ListGuidesCommand,
-  PublishGuideCommand, ResourceConflictException
+  PublishGuideCommand,
+  ResourceConflictException
 } from "@stedi/sdk-client-guides";
-import { serializeError } from "serialize-error";
+
+import { DEFAULT_SDK_CLIENT_PROPS } from "../lib/constants.js";
 
 let _guidesClient: GuidesClient;
 
 export const guidesClient = () => {
   if (_guidesClient === undefined) {
     const config: GuidesClientConfig = {
-      apiKey: process.env.STEDI_API_KEY,
+      ...DEFAULT_SDK_CLIENT_PROPS,
       endpoint: "https://guides.us.stedi.com/2022-03-09",
       maxAttempts: 5,
-      region: "us",
       requestHandler: new NodeHttpHandler({
         connectionTimeout: 5_000,
       }),

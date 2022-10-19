@@ -1,15 +1,28 @@
 import hash from "object-hash";
 import { TextEncoder } from "util";
 import { ErrorObject, serializeError } from "serialize-error";
-import { bucketClient } from "./buckets";
-import { DeleteObjectCommand, PutObjectCommand, } from "@stedi/sdk-client-buckets";
 
-const bucketName = process.env["EXECUTIONS_BUCKET_NAME"];
+import {
+  BucketsClient,
+  DeleteObjectCommand,
+  PutObjectCommand,
+  ReadBucketCommand,
+} from "@stedi/sdk-client-buckets";
+
+import { bucketClient } from "./buckets.js";
+import { requiredEnvVar } from "./environment.js";
+import { trackProgress } from "./progressTracking.js";
+
+const bucketName = requiredEnvVar("EXECUTIONS_BUCKET_NAME");
+
+let _executionsBucketClient: BucketsClient;
+let _infiniteLoopCheckPassed: boolean = false;
 
 export type FailureRecord = { bucketName?: string, key: string };
 
 export const recordNewExecution = async (executionId: string, input: any) => {
-  const result = await bucketClient().send(
+  const client = await executionsBucketClient();
+  const result = await client.send(
     new PutObjectCommand({
       bucketName,
       key: `functions/${functionName()}/${executionId}/input.json`,
@@ -21,7 +34,8 @@ export const recordNewExecution = async (executionId: string, input: any) => {
 };
 
 export const markExecutionAsSuccessful = async (executionId: string) => {
-  let inputResult = await bucketClient().send(
+  const client = await executionsBucketClient();
+  const inputResult = await client.send(
     new DeleteObjectCommand({
       bucketName,
       key: `functions/${functionName()}/${executionId}/input.json`,
@@ -38,7 +52,7 @@ export const markExecutionAsSuccessful = async (executionId: string) => {
   // async invokes automatically retries on failure, so
   // we should attempt to cleanup any leftover failure results
   // as this might be a later retry invoke
-  const failureResult = await bucketClient().send(
+  const failureResult = await client.send(
     new DeleteObjectCommand({
       bucketName,
       key: `functions/${functionName()}/${executionId}/failure.json`,
@@ -54,22 +68,21 @@ export const markExecutionAsSuccessful = async (executionId: string) => {
   return { inputResult, failureResult };
 };
 
-export const failedExecution = async (
-  executionId: string,
-  error: Error
-): Promise<{ statusCode: number, message: string, failureRecord: FailureRecord, error: ErrorObject }> => {
+export const failedExecution = async (executionId: string, error: Error): Promise<{ message: string, failureRecord: FailureRecord, error: ErrorObject }> => {
   const rawError = serializeError(error)
   const failureRecord = await markExecutionAsFailed(executionId, rawError);
-  const statusCode = (error as any)?.["$metadata"]?.httpStatusCode || 500;
-  return { statusCode, message: "execution failed", failureRecord, error: rawError }
+  const message = "execution failed";
+  await trackProgress(message, { error: rawError });
+  return { message, failureRecord, error: rawError }
 }
 
 const markExecutionAsFailed = async (
   executionId: string,
   error: ErrorObject
 ): Promise<FailureRecord> => {
+  const client = await executionsBucketClient();
   const key = `functions/${functionName()}/${executionId}/failure.json`;
-  const result = await bucketClient().send(
+  const result = await client.send(
     new PutObjectCommand({
       bucketName,
       key,
@@ -88,4 +101,21 @@ export const generateExecutionId = (event: any) => hash({
   event,
 });
 
-export const functionName = () => process.env["STEDI_FUNCTION_NAME"];
+export const functionName = () => requiredEnvVar("STEDI_FUNCTION_NAME");
+
+const executionsBucketClient = async (): Promise<BucketsClient> => {
+  if(_executionsBucketClient === undefined) {
+    _executionsBucketClient = bucketClient();
+  }
+
+  if (!_infiniteLoopCheckPassed) {
+    // guard against infinite Function execution loops
+    const executionsBucket = await  _executionsBucketClient.send(new ReadBucketCommand({ bucketName }));
+    if (executionsBucket.notifications?.functions?.some((fn) => fn.functionName === functionName())) {
+      throw new Error("Error: executions bucket has recursive notifications configured")
+    }
+    _infiniteLoopCheckPassed = true;
+  }
+
+  return _executionsBucketClient;
+}
