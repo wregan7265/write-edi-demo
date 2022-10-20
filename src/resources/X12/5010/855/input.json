@@ -1,5 +1,8 @@
 {
-  "transactionSet": "X12-855",
+  "ediMetadata": {
+    "release": "5010",
+    "code": "855"
+  },
   "orderAcknowledgementDetails": {
     "internalOrderNumber": "ACME-4567",
     "orderNumber": "365465413",

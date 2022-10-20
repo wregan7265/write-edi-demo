@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { serializeError } from "serialize-error";
 
 import { IncrementValueCommand, StashClient } from "@stedi/sdk-client-stash";
 import { MapDocumentCommand, MappingsClient } from "@stedi/sdk-client-mappings";
@@ -13,35 +14,28 @@ import {
   recordNewExecution,
 } from "../../../lib/execution.js";
 import { getEnvVarNameForResource, requiredEnvVar } from "../../../lib/environment.js";
+import { DEFAULT_SDK_CLIENT_PROPS } from "../../../lib/constants.js";
 
-const sdkClientProps = {
-  apiKey: requiredEnvVar("STEDI_API_KEY"),
-  region: "us",
-};
+const stashClient = new StashClient(DEFAULT_SDK_CLIENT_PROPS);
+const mappingsClient = new MappingsClient(DEFAULT_SDK_CLIENT_PROPS);
 
-const stashClient = new StashClient(sdkClientProps);
-const mappingsClient = new MappingsClient(sdkClientProps);
-
-// buckets client is shared across handler and execution tracking logic
+// Buckets client is shared across handler and execution tracking logic
 const bucketsClient = bucketClient();
 
 export const handler = async (event: any): Promise<Record<string, any>> => {
   const executionId = generateExecutionId(event);
+  console.log("starting", JSON.stringify({ input: event, executionId }));
 
   try {
     await recordNewExecution(executionId, event);
 
-    if (!event.transactionSet) {
-      return failedExecution(executionId, new Error("Required property `transactionSet` missing from input event"));
-    }
+    const transactionSetIdentifier = getTransactionSetIdentifierForInput(event.ediMetadata);
 
     // Fail fast if required env vars are missing
-    const guideEnvVarName = getEnvVarNameForResource("guide", event.transactionSet);
-    const mappingEnvVarName = getEnvVarNameForResource("mapping", event.transactionSet);
+    const guideEnvVarName = getEnvVarNameForResource("guide", transactionSetIdentifier);
+    const mappingEnvVarName = getEnvVarNameForResource("mapping", transactionSetIdentifier);
     const guideId = requiredEnvVar(guideEnvVarName);
     const mappingId = requiredEnvVar(mappingEnvVarName);
-
-    console.log("starting", { input: event, executionId });
 
     const functionalIdentifierCode = "OW";
     const senderId = "AMERCHANT";
@@ -64,6 +58,7 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
     }
 
     controlNumber = controlNumber.toString().padStart(9, "0");
+    console.log(`generated control number: ${controlNumber}`);
 
     // Configure envelope data (interchange control header and functional group header) to combine with mapping result
     const envelope = {
@@ -94,6 +89,7 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
         content: { controlNumber, ...event },
       })
     );
+    console.log(`mapping result: ${JSON.stringify(mapResult)}`);
 
     // Translate the Guide schema-based JSON to X12 EDI
     const translation = await translateJsonToEdi(mapResult.content, guideId, envelope);
@@ -102,7 +98,7 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
     const putCommandArgs: PutObjectCommandInput = {
       bucketName: process.env.SFTP_BUCKET_NAME,
       key: `trading_partners/${receiverId}/outbound/${controlNumber}.edi`,
-      body: translation.output,
+      body: translation,
     };
     await bucketsClient.send(new PutObjectCommand(putCommandArgs));
 
@@ -113,7 +109,16 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       ...putCommandArgs
     };
   } catch (e) {
-    const error = e instanceof Error ? e : new Error(`unknown error: ${JSON.stringify(e)}`);
+    const error = e instanceof Error ? e : new Error(`unknown error: ${serializeError(e)}`);
     return failedExecution(executionId, error);
   }
+};
+
+// Use ediMetadata input property to construct the transaction set identifier using the convention used in this demo
+const getTransactionSetIdentifierForInput = (ediMetadata: any): string => {
+  if (!ediMetadata?.release || !ediMetadata?.code) {
+    throw new Error("Invalid input: `ediMetadata: { release: string; code: string; }` property is required");
+  }
+
+  return `X12-${ediMetadata.release}-${ediMetadata.code}`;
 };
