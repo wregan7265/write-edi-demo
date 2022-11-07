@@ -29,8 +29,9 @@ const createOrUpdateFunction = async (
   const functionPaths = getFunctionPaths(process.argv[2]);
 
   // Ensure that required guides and mappings env vars are defined for all enabled transactions
-  const enabledTransactionSets = getEnabledTransactionSets();
-  getResourceIdsForTransactionSets(enabledTransactionSets);
+  // NOTE: check disabled because mappings are not used
+  // const enabledTransactionSets = getEnabledTransactionSets();
+  // getResourceIdsForTransactionSets(enabledTransactionSets);
 
   const promises = functionPaths.map(async (fnPath) => {
     const functionName = functionNameFromPath(fnPath);
