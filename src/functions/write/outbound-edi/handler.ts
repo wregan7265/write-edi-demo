@@ -2,7 +2,6 @@ import { format } from "date-fns";
 import { serializeError } from "serialize-error";
 
 import { IncrementValueCommand, StashClient } from "@stedi/sdk-client-stash";
-import { MapDocumentCommand, MappingsClient } from "@stedi/sdk-client-mappings";
 import { PutObjectCommand, PutObjectCommandInput, } from "@stedi/sdk-client-buckets";
 
 import { bucketClient } from "../../../lib/buckets.js";
@@ -17,7 +16,6 @@ import { getEnvVarNameForResource, requiredEnvVar } from "../../../lib/environme
 import { DEFAULT_SDK_CLIENT_PROPS } from "../../../lib/constants.js";
 
 const stashClient = new StashClient(DEFAULT_SDK_CLIENT_PROPS);
-const mappingsClient = new MappingsClient(DEFAULT_SDK_CLIENT_PROPS);
 
 // Buckets client is shared across handler and execution tracking logic
 const bucketsClient = bucketClient();
@@ -33,10 +31,9 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
 
     // Fail fast if required env vars are missing
     const guideEnvVarName = getEnvVarNameForResource("guide", transactionSetIdentifier);
-    const mappingEnvVarName = getEnvVarNameForResource("mapping", transactionSetIdentifier);
     const guideId = requiredEnvVar(guideEnvVarName);
-    const mappingId = requiredEnvVar(mappingEnvVarName);
 
+    // TODO: replace hardcoded values -- possibly incorporate into incoming event schema?
     const functionalIdentifierCode = "OW";
     const senderId = "AMERCHANT";
     const receiverId = "ANOTHERMERCH";
@@ -60,6 +57,7 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
     controlNumber = controlNumber.toString().padStart(9, "0");
     console.log(`generated control number: ${controlNumber}`);
 
+    // TODO: replace hardcoded qualifiers and codes in envelope data
     // Configure envelope data (interchange control header and functional group header) to combine with mapping result
     const envelope = {
       interchangeHeader: {
@@ -82,17 +80,8 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       },
     };
 
-    // Execute mapping to transform API JSON input to Guide schema-based JSON
-    const mapResult = await mappingsClient.send(
-      new MapDocumentCommand({
-        id: mappingId,
-        content: { controlNumber, ...event },
-      })
-    );
-    console.log(`mapping result: ${JSON.stringify(mapResult)}`);
-
     // Translate the Guide schema-based JSON to X12 EDI
-    const translation = await translateJsonToEdi(mapResult.content, guideId, envelope);
+    const translation = await translateJsonToEdi({ transactionSets: event.transactionSets }, guideId, envelope);
 
     // Save generated X12 EDI file to SFTP-accessible Bucket
     const putCommandArgs: PutObjectCommandInput = {
