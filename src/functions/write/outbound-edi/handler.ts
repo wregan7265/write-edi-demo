@@ -80,8 +80,14 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       },
     };
 
+    // TODO: optionally iterate through transaction sets and translate each one
+    //  (multiple transaction sets will hopefully be supported for `/x12/from-json` soon)
+    if (event.transactionSets.length !== 1) {
+      return failedExecution(executionId, new Error("writing requires exactly one transaction set at this time"));
+    }
+
     // Translate the Guide schema-based JSON to X12 EDI
-    const translation = await translateJsonToEdi({ transactionSets: event.transactionSets }, guideId, envelope);
+    const translation = await translateJsonToEdi(event.transactionSets[0], guideId, envelope);
 
     // Save generated X12 EDI file to SFTP-accessible Bucket
     const putCommandArgs: PutObjectCommandInput = {
